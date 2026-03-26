@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Truck Alert",
+    "slug": "truck-alert",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": { "backgroundColor": "#1a1a2e" },
+    "android": {
+      "config": {
+        "googleMaps": { "apiKey": "YOUR_GOOGLE_MAPS_KEY" }
+      },
+      "adaptiveIcon": { "backgroundColor": "#1a1a2e" },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "We need your location to show nearby alerts.",
+        "NSCameraUsageDescription": "We need camera access to attach photos to reports.",
+        "NSPhotoLibraryUsageDescription": "We need photo library access to attach photos."
+      }
+    },
+    "sdkVersion": "54.0.0",
+    "plugins": ["expo-location", "expo-image-picker"]
+  }
+}
