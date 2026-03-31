@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "splash": { "backgroundColor": "#1a1a2e" },
+    "splash": { "image": "./assets/splash.png", "backgroundColor": "#1a1a2e", "resizeMode": "contain" },
     "android": {
       "config": {
         "googleMaps": { "apiKey": "YOUR_GOOGLE_MAPS_KEY" }
@@ -15,7 +15,8 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "CAMERA",
-        "READ_EXTERNAL_STORAGE"
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ]
     },
     "ios": {

@@ -3,8 +3,9 @@ const router = express.Router();
 const multer = require('multer');
 const Report = require('../models/Report');
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // POST /api/reports
 router.post('/', auth, upload.single('photo'), async (req, res, next) => {
@@ -20,11 +21,12 @@ router.post('/', auth, upload.single('photo'), async (req, res, next) => {
       location: {
         type: 'Point',
         coordinates: [parseFloat(lng), parseFloat(lat)],
-        address: address || '',
       },
+      address: address || '',
       photo,
       driverId: req.driver._id,
       driverName: req.driver.name,
+      driverPhone: req.driver.phone,
     });
 
     req.app.get('io').emit('alert_nearby', report);
@@ -94,7 +96,7 @@ router.patch('/:id/upvote', async (req, res, next) => {
 });
 
 // PATCH /api/reports/:id/resolve
-router.patch('/:id/resolve', upload.single('resolvedPhoto'), async (req, res, next) => {
+router.patch('/:id/resolve', adminAuth, upload.single('resolvedPhoto'), async (req, res, next) => {
   try {
     const update = { status: 'resolved' };
     if (req.file) {

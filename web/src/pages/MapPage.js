@@ -63,16 +63,17 @@ export default function MapPage() {
     );
 
     const socket = connectSocket();
-    socket.on('alert_nearby', (report) => {
+    const handleAlert = (report) => {
       setReports((prev) => prev.find((r) => r._id === report._id) ? prev : [report, ...prev]);
       setAlert(report);
       setTimeout(() => setAlert(null), 5000);
-    });
-    socket.on('emergency_alert', (data) => {
+    };
+    const handleEmergency = (data) => {
       window.alert(`🚨 EMERGENCY!\n${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}`);
-    });
-
-    return () => { getSocket()?.off('alert_nearby'); getSocket()?.off('emergency_alert'); };
+    };
+    socket.on('alert_nearby', handleAlert);
+    socket.on('emergency_alert', handleEmergency);
+    return () => { socket.off('alert_nearby', handleAlert); socket.off('emergency_alert', handleEmergency); };
   }, [fetchReports]);
 
   return (

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerDriver, setDriverId } from './api';
+import { registerDriver, loginDriver, setDriverId } from './api';
 
 const DriverContext = createContext();
 
@@ -20,8 +20,16 @@ export const DriverProvider = ({ children }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const login = async (name, phone, truckNumber) => {
+  const register = async (name, phone, truckNumber) => {
     const { data } = await registerDriver({ name, phone, truckNumber });
+    setDriver(data);
+    setDriverId(data._id);
+    await AsyncStorage.setItem('driver', JSON.stringify(data));
+    return data;
+  };
+
+  const login = async (phone) => {
+    const { data } = await loginDriver(phone);
     setDriver(data);
     setDriverId(data._id);
     await AsyncStorage.setItem('driver', JSON.stringify(data));
@@ -35,7 +43,7 @@ export const DriverProvider = ({ children }) => {
   };
 
   return (
-    <DriverContext.Provider value={{ driver, loading, login, logout }}>
+    <DriverContext.Provider value={{ driver, loading, register, login, logout }}>
       {children}
     </DriverContext.Provider>
   );

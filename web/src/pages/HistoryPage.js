@@ -65,14 +65,23 @@ export default function HistoryPage() {
                   <div className="rc-info">
                     <strong>{r.type.replace(/_/g, ' ').toUpperCase()}</strong>
                     <span>{r.driverName} · {new Date(r.createdAt).toLocaleDateString()}</span>
+                    {isExpanded && r.driverPhone && (
+                      <a href={`tel:${r.driverPhone}`} style={{ color: '#2ecc71', fontSize: 11, display: 'block', marginTop: 2 }}
+                        onClick={(e) => e.stopPropagation()}>📞 {r.driverPhone}</a>
+                    )}
                   </div>
                   <span className={`rc-status ${r.status}`}>{r.status}</span>
                 </div>
 
                 <p className={`rc-desc ${isExpanded ? 'expanded' : ''}`}>{r.description}</p>
 
-                <p className="rc-addr">
-                  📍 {r.location?.address || `${r.location?.coordinates?.[1]?.toFixed(4)}, ${r.location?.coordinates?.[0]?.toFixed(4)}`}
+                <p className="rc-addr" onClick={(e) => {
+                  e.stopPropagation();
+                  const lat = r.location?.coordinates?.[1];
+                  const lng = r.location?.coordinates?.[0];
+                  if (lat && lng) window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+                }}>
+                  📍 {r.address || `${r.location?.coordinates?.[1]?.toFixed(4)}, ${r.location?.coordinates?.[0]?.toFixed(4)}`}
                 </p>
 
                 {isExpanded && r.photo && (

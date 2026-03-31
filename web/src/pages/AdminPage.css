@@ -98,6 +98,8 @@
 
 .desc-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .coord-cell { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); font-size: 12px; }
+.coord-link { color: #3498db; text-decoration: none; font-size: 12px; }
+.coord-link:hover { text-decoration: underline; color: #5dade2; }
 .type-cell { text-transform: capitalize; white-space: nowrap; }
 
 .status-badge {
@@ -149,6 +151,49 @@
 .feed-body strong { color: #fff; font-size: 14px; }
 .feed-body p { color: var(--muted); font-size: 12px; margin-top: 4px; }
 .feed-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+.type-select {
+  background: var(--card); border: 1px solid var(--border); color: #aaa;
+  padding: 8px 12px; border-radius: 8px; font-size: 13px;
+}
+.type-select:focus { border-color: var(--accent); outline: none; }
+
+.report-count {
+  background: rgba(245,166,35,0.15); color: var(--accent);
+  border-radius: 12px; padding: 2px 10px; font-size: 12px; font-weight: bold;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.modal {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px; width: 100%; max-width: 560px;
+  max-height: 90vh; overflow-y: auto; position: relative;
+}
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  background: none; color: #888; font-size: 18px;
+}
+.modal-close:hover { color: #fff; }
+.modal-title { color: var(--accent); font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+.modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.modal-field { display: flex; flex-direction: column; gap: 4px; }
+.mf-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+.mf-value { color: #fff; font-size: 14px; }
+.mf-desc { color: #ddd; font-size: 14px; line-height: 1.6; margin-top: 4px; }
+.modal-photo { width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px; }
+.modal-actions { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+.map-link {
+  background: rgba(52,152,219,0.15); border: 1px solid #3498db;
+  border-radius: 6px; padding: 5px 10px; font-size: 13px; color: #3498db;
+  text-decoration: none;
+}
+.map-link:hover { background: rgba(52,152,219,0.3); }
+
 
 @media (max-width: 768px) {
   .admin-sidebar { width: 60px; }

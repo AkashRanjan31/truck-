@@ -5,30 +5,51 @@ import {
 } from 'react-native';
 import { useDriver } from '../services/DriverContext';
 
+// step: 'phone' | 'details'
 export default function LoginScreen() {
-  const { login } = useDriver();
-  const [form, setForm] = useState({ name: '', phone: '', truckNumber: '' });
+  const { register, login } = useDriver();
+  const [isRegister, setIsRegister] = useState(true);
+  const [step, setStep] = useState('phone');
+  const [phone, setPhone] = useState('');
+  const [form, setForm] = useState({ name: '', truckNumber: '' });
   const [loading, setLoading] = useState(false);
 
+  const handlePhoneNext = () => {
+    if (!phone.trim() || phone.trim().length < 10)
+      return Alert.alert('Error', 'Enter a valid phone number');
+    if (isRegister) setStep('details');
+    else handleLogin();
+  };
+
   const handleLogin = async () => {
-    if (!form.name.trim() || !form.phone.trim() || !form.truckNumber.trim()) {
-      return Alert.alert('Error', 'All fields are required');
-    }
     setLoading(true);
     try {
-      await login(form.name.trim(), form.phone.trim(), form.truckNumber.trim());
+      await login(phone.trim());
     } catch (err) {
-      Alert.alert('Registration Failed', err.message || 'Cannot connect to server. Make sure backend is running.');
+      Alert.alert('Error', err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const fields = [
-    { key: 'name', placeholder: 'Full Name', keyboard: 'default' },
-    { key: 'phone', placeholder: 'Phone Number', keyboard: 'phone-pad' },
-    { key: 'truckNumber', placeholder: 'Truck Number (e.g. MH12AB1234)', keyboard: 'default' },
-  ];
+  const handleRegister = async () => {
+    if (!form.name.trim() || !form.truckNumber.trim())
+      return Alert.alert('Error', 'All fields are required');
+    setLoading(true);
+    try {
+      await register(form.name.trim(), phone.trim(), form.truckNumber.trim());
+    } catch (err) {
+      Alert.alert('Registration Failed', err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetFlow = () => {
+    setStep('phone');
+    setPhone('');
+    setForm({ name: '', truckNumber: '' });
+  };
 
   return (
     <KeyboardAvoidingView
@@ -40,26 +61,73 @@ export default function LoginScreen() {
         <Text style={styles.title}>Truck Alert</Text>
         <Text style={styles.subtitle}>Driver Safety Network</Text>
 
-        {fields.map((f) => (
-          <TextInput
-            key={f.key}
-            style={styles.input}
-            placeholder={f.placeholder}
-            placeholderTextColor="#555"
-            keyboardType={f.keyboard}
-            autoCapitalize={f.key === 'truckNumber' ? 'characters' : 'words'}
-            value={form[f.key]}
-            onChangeText={(v) => setForm({ ...form, [f.key]: v })}
-          />
-        ))}
+        {/* Toggle — only show on phone step */}
+        {step === 'phone' && (
+          <View style={styles.toggle}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, isRegister && styles.toggleActive]}
+              onPress={() => setIsRegister(true)}
+            >
+              <Text style={[styles.toggleText, isRegister && styles.toggleTextActive]}>Register</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleBtn, !isRegister && styles.toggleActive]}
+              onPress={() => setIsRegister(false)}
+            >
+              <Text style={[styles.toggleText, !isRegister && styles.toggleTextActive]}>Login</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        <TouchableOpacity style={styles.btn} onPress={handleLogin} disabled={loading}>
-          <Text style={styles.btnText}>{loading ? 'Connecting...' : 'Join Network'}</Text>
-        </TouchableOpacity>
+        {/* Step 1: Phone */}
+        {step === 'phone' && (
+          <>
+            <Text style={styles.stepLabel}>Enter your phone number</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Phone Number"
+              placeholderTextColor="#555"
+              keyboardType="phone-pad"
+              value={phone}
+              onChangeText={setPhone}
+              maxLength={15}
+            />
+            <TouchableOpacity style={styles.btn} onPress={handlePhoneNext} disabled={loading}>
+              <Text style={styles.btnText}>{loading ? 'Please wait...' : isRegister ? 'Next' : 'Login'}</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
-        <Text style={styles.hint}>
-          Make sure your phone and PC are on the same WiFi network.
-        </Text>
+        {/* Step 2: Details (register only) */}
+        {step === 'details' && (
+          <>
+            <Text style={styles.stepLabel}>Complete your profile</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              placeholderTextColor="#555"
+              autoCapitalize="words"
+              value={form.name}
+              onChangeText={(v) => setForm({ ...form, name: v })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Truck Number (e.g. MH12AB1234)"
+              placeholderTextColor="#555"
+              autoCapitalize="characters"
+              value={form.truckNumber}
+              onChangeText={(v) => setForm({ ...form, truckNumber: v })}
+            />
+            <TouchableOpacity style={styles.btn} onPress={handleRegister} disabled={loading}>
+              <Text style={styles.btnText}>{loading ? 'Registering...' : 'Join Network'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.linkBtn} onPress={resetFlow}>
+              <Text style={styles.linkText}>← Change number</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <Text style={styles.hint}>Make sure your phone and PC are on the same WiFi network.</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -70,11 +138,22 @@ const styles = StyleSheet.create({
   inner: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   logo: { fontSize: 64, textAlign: 'center', marginBottom: 8 },
   title: { fontSize: 32, fontWeight: 'bold', color: '#f5a623', textAlign: 'center' },
-  subtitle: { fontSize: 14, color: '#aaa', textAlign: 'center', marginBottom: 40 },
+  subtitle: { fontSize: 14, color: '#aaa', textAlign: 'center', marginBottom: 24 },
+  toggle: {
+    flexDirection: 'row', backgroundColor: '#16213e',
+    borderRadius: 10, marginBottom: 24, overflow: 'hidden',
+  },
+  toggleBtn: { flex: 1, padding: 12, alignItems: 'center' },
+  toggleActive: { backgroundColor: '#f5a623' },
+  toggleText: { color: '#aaa', fontWeight: 'bold' },
+  toggleTextActive: { color: '#1a1a2e' },
+  stepLabel: { color: '#aaa', fontSize: 14, marginBottom: 12, textAlign: 'center' },
   input: {
     backgroundColor: '#16213e', color: '#fff', borderRadius: 10,
     padding: 14, marginBottom: 14, fontSize: 16, borderWidth: 1, borderColor: '#0f3460',
   },
+  linkBtn: { alignItems: 'center', marginTop: 14 },
+  linkText: { color: '#f5a623', fontSize: 13 },
   btn: {
     backgroundColor: '#f5a623', borderRadius: 10, padding: 16,
     alignItems: 'center', marginTop: 8,

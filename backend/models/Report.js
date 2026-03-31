@@ -11,12 +11,13 @@ const reportSchema = new mongoose.Schema(
     location: {
       type: { type: String, default: 'Point' },
       coordinates: { type: [Number], required: true }, // [lng, lat]
-      address: { type: String, default: '' },
     },
+    address: { type: String, default: '' },
     photo: { type: String, default: null },
     resolvedPhoto: { type: String, default: null }, // Base64 string stored in MongoDB
     driverId: { type: mongoose.Schema.Types.ObjectId, ref: 'Driver', required: true },
     driverName: { type: String, required: true },
+    driverPhone: { type: String, default: '' },
     status: { type: String, enum: ['active', 'resolved'], default: 'active' },
     upvotes: { type: Number, default: 0 },
   },

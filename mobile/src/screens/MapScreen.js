@@ -41,6 +41,8 @@ export default function MapScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
+    let watcher = null;
+
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return Alert.alert('Permission denied', 'Location is required to show nearby alerts.');
@@ -50,41 +52,45 @@ export default function MapScreen({ navigation }) {
       fetchReports(loc.coords.latitude, loc.coords.longitude);
       updateLocation(driver._id, loc.coords.latitude, loc.coords.longitude).catch(() => {});
 
-      // Watch location continuously
-      locationWatcher.current = await Location.watchPositionAsync(
+      watcher = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 100 },
         (newLoc) => {
           setLocation(newLoc.coords);
           updateLocation(driver._id, newLoc.coords.latitude, newLoc.coords.longitude).catch(() => {});
         }
       );
+      locationWatcher.current = watcher;
     })();
 
     const socket = connectSocket();
 
-    socket.on('alert_nearby', (report) => {
+    const handleAlert = (report) => {
       setReports((prev) => {
         const exists = prev.find((r) => r._id === report._id);
         return exists ? prev : [report, ...prev];
       });
       setAlertBanner(report);
       setTimeout(() => setAlertBanner(null), 5000);
-    });
+    };
 
-    socket.on('emergency_alert', (data) => {
+    const handleEmergency = (data) => {
       Alert.alert(
         '🚨 EMERGENCY ALERT',
         `${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}`,
         [{ text: 'OK' }]
       );
-    });
+    };
+
+    socket.on('alert_nearby', handleAlert);
+    socket.on('emergency_alert', handleEmergency);
 
     return () => {
       locationWatcher.current?.remove();
-      getSocket()?.off('alert_nearby');
-      getSocket()?.off('emergency_alert');
+      locationWatcher.current = null;
+      socket.off('alert_nearby', handleAlert);
+      socket.off('emergency_alert', handleEmergency);
     };
-  }, []);
+  }, [driver._id, fetchReports]);
 
   const centerOnUser = () => {
     if (location) {

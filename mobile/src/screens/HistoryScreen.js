@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import {
-  View, Text, FlatList, StyleSheet, TouchableOpacity,
-  RefreshControl, Alert, Image,
+import { View, Text, FlatList, StyleSheet, TouchableOpacity,
+  RefreshControl, Alert, Image, Linking,
 } from 'react-native';
-import { getDriverReports, getAllReports, upvoteReport, resolveReport } from '../services/api';
+import { getDriverReports, upvoteReport, resolveReport, getAllActiveReports } from '../services/api';
 import { useDriver } from '../services/DriverContext';
 
 const ISSUE_ICONS = {
@@ -28,7 +27,7 @@ export default function HistoryScreen() {
     try {
       const { data } = tab === 'mine'
         ? await getDriverReports(driver._id)
-        : await getAllReports();
+        : await getAllActiveReports();
       setReports(data);
     } catch {}
   }, [tab, driver._id]);
@@ -84,6 +83,11 @@ export default function HistoryScreen() {
             <Text style={styles.cardMeta}>
               {item.driverName} · {new Date(item.createdAt).toLocaleDateString()}
             </Text>
+            {isExpanded && item.driverPhone ? (
+              <TouchableOpacity onPress={() => Linking.openURL(`tel:${item.driverPhone}`)}>
+                <Text style={styles.phoneLink}>📞 {item.driverPhone} (tap to call)</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
           <View style={[styles.statusBadge, { backgroundColor: STATUS_COLOR[item.status] }]}>
             <Text style={styles.statusText}>{item.status}</Text>
@@ -94,12 +98,22 @@ export default function HistoryScreen() {
           {item.description}
         </Text>
 
-        {item.location?.address ? (
-          <Text style={styles.cardAddr}>📍 {item.location.address}</Text>
+        {item.address ? (
+          <TouchableOpacity onPress={() => {
+            const lat = item.location?.coordinates?.[1];
+            const lng = item.location?.coordinates?.[0];
+            if (lat && lng) Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+          }}>
+            <Text style={styles.cardAddr}>📍 {item.address}</Text>
+          </TouchableOpacity>
         ) : (
-          <Text style={styles.cardAddr}>
-            📍 {item.location?.coordinates?.[1]?.toFixed(4)}, {item.location?.coordinates?.[0]?.toFixed(4)}
-          </Text>
+          <TouchableOpacity onPress={() => {
+            const lat = item.location?.coordinates?.[1];
+            const lng = item.location?.coordinates?.[0];
+            if (lat && lng) Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+          }}>
+            <Text style={styles.cardAddr}>📍 {item.location?.coordinates?.[1]?.toFixed(4)}, {item.location?.coordinates?.[0]?.toFixed(4)}</Text>
+          </TouchableOpacity>
         )}
 
         {isExpanded && item.photo && (
@@ -118,8 +132,8 @@ export default function HistoryScreen() {
           </TouchableOpacity>
 
           {isOwner && item.status === 'active' && (
-            <TouchableOpacity style={styles.resolveBtn} onPress={() => handleResolve(item._id)}>
-              <Text style={styles.resolveBtnText}>✅ Resolve</Text>
+            <TouchableOpacity style={styles.resolveBtn} onPress={() => handleResolve(item._id)} disabled>
+              <Text style={[styles.resolveBtnText, { opacity: 0.3 }]}>✅ Admin Only</Text>
             </TouchableOpacity>
           )}
 
@@ -180,10 +194,11 @@ const styles = StyleSheet.create({
   cardInfo: { flex: 1 },
   cardType: { color: '#f5a623', fontWeight: 'bold', fontSize: 13 },
   cardMeta: { color: '#888', fontSize: 11, marginTop: 2 },
+  phoneLink: { color: '#2ecc71', fontSize: 11, marginTop: 4, textDecorationLine: 'underline' },
   statusBadge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
   statusText: { color: '#fff', fontSize: 11, fontWeight: 'bold' },
   cardDesc: { color: '#ddd', fontSize: 14, marginBottom: 6, lineHeight: 20 },
-  cardAddr: { color: '#888', fontSize: 12, marginBottom: 8 },
+  cardAddr: { color: '#3498db', fontSize: 12, marginBottom: 8, textDecorationLine: 'underline' },
   photo: { width: '100%', height: 180, borderRadius: 8, marginBottom: 8 },
   resolvedLabel: { color: '#2ecc71', fontSize: 12, fontWeight: 'bold', marginBottom: 4, marginTop: 8 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },

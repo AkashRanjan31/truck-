@@ -29,14 +29,20 @@ export default function ReportScreen({ navigation, route }) {
   const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') return Alert.alert('Permission denied');
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.6 });
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      quality: 0.6,
+    });
     if (!result.canceled) setPhoto(result.assets[0]);
   };
 
   const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return Alert.alert('Permission denied');
-    const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.6 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.6,
+    });
     if (!result.canceled) setPhoto(result.assets[0]);
   };
 
@@ -57,7 +63,10 @@ export default function ReportScreen({ navigation, route }) {
       let coords = passedLocation;
       if (!coords) {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return Alert.alert('Error', 'Location permission required');
+        if (status !== 'granted') {
+          setLoading(false);
+          return Alert.alert('Error', 'Location permission required');
+        }
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
         coords = loc.coords;
       }
@@ -69,10 +78,13 @@ export default function ReportScreen({ navigation, route }) {
       formData.append('lng', coords.longitude.toString());
 
       if (photo) {
+        const uri = photo.uri;
+        const mimeType = photo.mimeType || (uri.endsWith('.png') ? 'image/png' : 'image/jpeg');
+        const ext = mimeType.split('/')[1];
         formData.append('photo', {
-          uri: photo.uri,
-          type: 'image/jpeg',
-          name: 'report.jpg',
+          uri: uri.startsWith('file://') ? uri : `file://${uri}`,
+          type: mimeType,
+          name: `report.${ext}`,
         });
       }
 
