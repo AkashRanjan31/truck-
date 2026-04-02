@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useDriver } from '../context/DriverContext';
-import { driverChangePassword } from '../services/api';
+import { changeDriverPassword } from '../services/api';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
@@ -9,6 +9,7 @@ export default function ProfilePage() {
   const [form, setForm] = useState({ current: '', next: '', confirm: '' });
   const [err, setErr] = useState('');
   const [ok, setOk] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const confirmLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) logout();
@@ -19,12 +20,17 @@ export default function ProfilePage() {
     setErr(''); setOk(false);
     if (form.next !== form.confirm) return setErr('New passwords do not match');
     if (form.next.length < 4) return setErr('Password must be at least 4 characters');
+    setSaving(true);
     try {
-      await driverChangePassword(driver._id, form.current || undefined, form.next);
+      await changeDriverPassword(driver._id, form.current || undefined, form.next);
       setOk(true);
       setForm({ current: '', next: '', confirm: '' });
       setTimeout(() => { setShowChangePass(false); setOk(false); }, 1500);
-    } catch (err) { setErr(err.message); }
+    } catch (err) {
+      setErr(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -55,15 +61,17 @@ export default function ProfilePage() {
           <form className="change-pass-form" onSubmit={handleChangePassword}>
             {driver?.password && (
               <input className="pass-input" type="password" placeholder="Current password"
-                value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} />
+                value={form.current} onChange={(e) => setForm({ ...form, current: e.target.value })} autoFocus />
             )}
-            <input className="pass-input" type="password" placeholder="New password"
+            <input className="pass-input" type="password" placeholder="New password (min 4 chars)"
               value={form.next} onChange={(e) => setForm({ ...form, next: e.target.value })} />
             <input className="pass-input" type="password" placeholder="Confirm new password"
               value={form.confirm} onChange={(e) => setForm({ ...form, confirm: e.target.value })} />
             {err && <p className="pass-err">{err}</p>}
             {ok && <p className="pass-ok">✅ Password updated!</p>}
-            <button className="pass-submit-btn" type="submit">Save Password</button>
+            <button className="pass-submit-btn" type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Password'}
+            </button>
           </form>
         )}
 

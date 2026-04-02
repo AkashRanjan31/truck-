@@ -15,37 +15,43 @@ api.interceptors.response.use(
 );
 
 export const registerDriver = (data) => api.post('/drivers/register', data);
-export const loginDriver = (phone, password) => api.post('/drivers/login', { phone, password });
+export const loginDriver = (phone) => api.post('/drivers/login', { phone });
 export const updateLocation = (id, lat, lng) => api.patch(`/drivers/${id}/location`, { lat, lng });
 
 export const createReport = (formData) => api.post('/reports', formData);
-
 export const getNearbyReports = (lat, lng, radius = 50000) =>
   api.get('/reports', { params: { lat, lng, radius } });
-
 export const getAllReports = () => api.get('/reports');
-export const getAllReportsAdmin = () => api.get('/reports/admin');
+export const getAllReportsAdmin = () =>
+  api.get('/reports/admin', {
+    headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
+  });
 export const getDriverReports = (driverId) => api.get(`/reports/driver/${driverId}`);
 export const upvoteReport = (id) => api.patch(`/reports/${id}/upvote`);
-
-// Simple resolve (no photo) — used by drivers
-export const resolveReport = (id) => api.patch(`/reports/${id}/resolve`);
-
-// Resolve with optional photo — used by admin
 export const resolveReportWithPhoto = (id, formData) =>
   api.patch(`/reports/${id}/resolve`, formData, {
     headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
   });
+export const deleteReport = (id) =>
+  api.delete(`/reports/${id}`, {
+    headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
+  });
 
-export const deleteReport = (id) => api.delete(`/reports/${id}`);
-export const driverChangePassword = (id, currentPassword, newPassword) =>
-  api.post(`/drivers/${id}/change-password`, { currentPassword, newPassword });
+export const getAllDrivers = () =>
+  api.get('/drivers', {
+    headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
+  });
+export const deleteDriver = (id) =>
+  api.delete(`/drivers/${id}`, {
+    headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
+  });
 
 export const adminLogin = (password) => api.post('/admin/login', { password });
+export const changeDriverPassword = (id, currentPassword, newPassword) =>
+  api.patch(`/drivers/${id}/password`, { currentPassword, newPassword });
 export const adminChangePassword = (currentPassword, newPassword) =>
-  api.post('/admin/change-password', { currentPassword, newPassword });
-
-export const getAllDrivers = () => api.get('/drivers');
-export const deleteDriver = (id) => api.delete(`/drivers/${id}`);
+  api.post('/admin/change-password', { newPassword }, {
+    headers: { 'x-admin-password': currentPassword },
+  });
 
 export default api;

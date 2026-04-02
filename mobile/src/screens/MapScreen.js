@@ -3,7 +3,7 @@ import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getNearbyReports, updateLocation } from '../services/api';
-import { connectSocket, getSocket } from '../services/socket';
+import { connectSocket } from '../services/socket';
 import { useDriver } from '../services/DriverContext';
 import AlertBanner from '../components/AlertBanner';
 
@@ -21,7 +21,6 @@ export default function MapScreen({ navigation }) {
   const [location, setLocation] = useState(null);
   const [reports, setReports] = useState([]);
   const [alertBanner, setAlertBanner] = useState(null);
-  const [currentStateName, setCurrentStateName] = useState(null);
   const mapRef = useRef(null);
 
   const fetchReports = useCallback(async (lat, lng) => {
@@ -41,19 +40,13 @@ export default function MapScreen({ navigation }) {
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       setLocation(loc.coords);
       fetchReports(loc.coords.latitude, loc.coords.longitude);
-
-      // Update location — backend auto-detects current state
-      updateLocation(driver._id, loc.coords.latitude, loc.coords.longitude)
-        .then(({ data }) => { if (data.currentState) setCurrentStateName(data.currentState.name); })
-        .catch(() => {});
+      updateLocation(driver._id, loc.coords.latitude, loc.coords.longitude).catch(() => {});
 
       watcher = await Location.watchPositionAsync(
         { accuracy: Location.Accuracy.Balanced, distanceInterval: 100 },
         (newLoc) => {
           setLocation(newLoc.coords);
-          updateLocation(driver._id, newLoc.coords.latitude, newLoc.coords.longitude)
-            .then(({ data }) => { if (data.currentState) setCurrentStateName(data.currentState.name); })
-            .catch(() => {});
+          updateLocation(driver._id, newLoc.coords.latitude, newLoc.coords.longitude).catch(() => {});
         }
       );
     })();
@@ -104,19 +97,12 @@ export default function MapScreen({ navigation }) {
               <View style={styles.callout}>
                 <Text style={styles.calloutTitle}>{ISSUE_ICONS[r.type]} {r.type.replace(/_/g, ' ').toUpperCase()}</Text>
                 <Text style={styles.calloutDesc}>{r.description}</Text>
-                {r.incidentState && <Text style={styles.calloutState}>📍 {r.incidentState.name}</Text>}
                 <Text style={styles.calloutMeta}>👍 {r.upvotes} · by {r.driverName}</Text>
               </View>
             </Callout>
           </Marker>
         ))}
       </MapView>
-
-      {currentStateName && (
-        <View style={styles.stateBadge}>
-          <Text style={styles.stateText}>📍 {currentStateName}</Text>
-        </View>
-      )}
 
       <TouchableOpacity style={styles.centerBtn} onPress={() => location && mapRef.current?.animateToRegion({ latitude: location.latitude, longitude: location.longitude, latitudeDelta: 0.1, longitudeDelta: 0.1 })}>
         <Text style={styles.centerBtnText}>📍</Text>
@@ -145,14 +131,7 @@ const styles = StyleSheet.create({
   callout: { backgroundColor: '#1a1a2e', borderRadius: 10, padding: 12, width: 220, borderWidth: 1, borderColor: '#f5a623' },
   calloutTitle: { color: '#f5a623', fontWeight: 'bold', fontSize: 13, marginBottom: 4 },
   calloutDesc: { color: '#ddd', fontSize: 12, marginBottom: 4 },
-  calloutState: { color: '#3498db', fontSize: 11, marginBottom: 2 },
   calloutMeta: { color: '#aaa', fontSize: 11 },
-  stateBadge: {
-    position: 'absolute', top: 16, left: 16,
-    backgroundColor: 'rgba(15,52,96,0.9)', paddingHorizontal: 14, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1, borderColor: '#3498db',
-  },
-  stateText: { color: '#3498db', fontSize: 12, fontWeight: 'bold' },
   reportBtn: {
     position: 'absolute', bottom: 30, alignSelf: 'center',
     backgroundColor: '#f5a623', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 30, elevation: 5,

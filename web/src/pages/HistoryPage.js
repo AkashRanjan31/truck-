@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getDriverReports, getAllReports, upvoteReport, resolveReport } from '../services/api';
+import { getDriverReports, getAllReports, upvoteReport } from '../services/api';
 import { useDriver } from '../context/DriverContext';
 import './HistoryPage.css';
 
@@ -30,14 +30,6 @@ export default function HistoryPage() {
     try {
       const { data } = await upvoteReport(id);
       setReports((prev) => prev.map((r) => r._id === id ? { ...r, upvotes: data.upvotes } : r));
-    } catch {}
-  };
-
-  const handleResolve = async (id) => {
-    if (!window.confirm('Mark this issue as resolved?')) return;
-    try {
-      const { data } = await resolveReport(id);
-      setReports((prev) => prev.map((r) => r._id === id ? { ...r, status: data.status } : r));
     } catch {}
   };
 
@@ -96,9 +88,6 @@ export default function HistoryPage() {
 
                 <div className="rc-actions" onClick={(e) => e.stopPropagation()}>
                   <button className="upvote-btn" onClick={() => handleUpvote(r._id)}>👍 {r.upvotes}</button>
-                  {isOwner && r.status === 'active' && (
-                    <button className="resolve-btn" onClick={() => handleResolve(r._id)}>✅ Resolve</button>
-                  )}
                   <span className="expand-hint">{isExpanded ? '▲ Less' : '▼ More'}</span>
                 </div>
               </div>

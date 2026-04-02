@@ -25,8 +25,8 @@ export const DriverProvider = ({ children }) => {
     return data;
   };
 
-  const login = async (phone, password) => {
-    const { data } = await loginDriver(phone, password);
+  const login = async (phone) => {
+    const { data } = await loginDriver(phone);
     setDriver(data);
     setDriverId(data._id);
     localStorage.setItem('driver', JSON.stringify(data));

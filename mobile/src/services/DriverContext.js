@@ -1,59 +1,49 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { registerDriver, loginDriver, setAuthToken } from './api';
+import { registerDriver, loginDriver, setDriverId } from './api';
 
 const DriverContext = createContext();
 
 export const DriverProvider = ({ children }) => {
   const [driver, setDriver] = useState(null);
-  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([
-      AsyncStorage.getItem('driver'),
-      AsyncStorage.getItem('token'),
-    ]).then(([driverData, savedToken]) => {
-      if (driverData && savedToken) {
-        const parsed = JSON.parse(driverData);
-        setDriver(parsed);
-        setToken(savedToken);
-        setAuthToken(savedToken);
-      }
-    }).finally(() => setLoading(false));
+    AsyncStorage.getItem('driver')
+      .then((data) => {
+        if (data) {
+          const parsed = JSON.parse(data);
+          setDriver(parsed);
+          setDriverId(parsed._id);
+        }
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const _persist = async (driverData, jwt) => {
-    setDriver(driverData);
-    setToken(jwt);
-    setAuthToken(jwt);
-    await AsyncStorage.multiSet([
-      ['driver', JSON.stringify(driverData)],
-      ['token', jwt],
-    ]);
+  const register = async (name, phone, truckNumber) => {
+    const { data } = await registerDriver({ name, phone, truckNumber });
+    setDriver(data);
+    setDriverId(data._id);
+    await AsyncStorage.setItem('driver', JSON.stringify(data));
+    return data;
   };
 
-  const register = async (name, phone, truckNumber, homeStateId) => {
-    const { data } = await registerDriver({ name, phone, truckNumber, homeStateId });
-    await _persist(data.driver, data.token);
-    return data.driver;
-  };
-
-  const login = async (phone, password) => {
-    const { data } = await loginDriver(phone, password);
-    await _persist(data.driver, data.token);
-    return data.driver;
+  const login = async (phone) => {
+    const { data } = await loginDriver(phone);
+    setDriver(data);
+    setDriverId(data._id);
+    await AsyncStorage.setItem('driver', JSON.stringify(data));
+    return data;
   };
 
   const logout = async () => {
     setDriver(null);
-    setToken(null);
-    setAuthToken(null);
-    await AsyncStorage.multiRemove(['driver', 'token']);
+    setDriverId(null);
+    await AsyncStorage.removeItem('driver');
   };
 
   return (
-    <DriverContext.Provider value={{ driver, token, loading, register, login, logout }}>
+    <DriverContext.Provider value={{ driver, loading, register, login, logout }}>
       {children}
     </DriverContext.Provider>
   );

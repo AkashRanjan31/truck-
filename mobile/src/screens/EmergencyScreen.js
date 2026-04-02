@@ -33,9 +33,6 @@ export default function EmergencyScreen() {
         lat: loc.coords.latitude,
         lng: loc.coords.longitude,
         address: `${loc.coords.latitude.toFixed(4)}, ${loc.coords.longitude.toFixed(4)}`,
-        stateId: driver.currentState?._id || null,
-        stateName: driver.currentState?.name || null,
-        homeState: driver.homeState?.name || null,
         timestamp: new Date().toISOString(),
       });
       setSent(true);
@@ -70,8 +67,6 @@ export default function EmergencyScreen() {
         <Text style={styles.infoText}>🚛 {driver?.truckNumber}</Text>
         <Text style={styles.infoText}>👤 {driver?.name}</Text>
         <Text style={styles.infoText}>📞 {driver?.phone}</Text>
-        <Text style={styles.infoText}>🏠 Home: {driver?.homeState?.name || 'Not set'}</Text>
-        <Text style={styles.infoText}>📍 Current: {driver?.currentState?.name || 'Unknown'}</Text>
       </View>
 
       <View style={styles.tipsCard}>

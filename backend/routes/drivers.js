@@ -1,81 +1,114 @@
 const express = require('express');
 const router = express.Router();
 const Driver = require('../models/Driver');
-const { authenticate, authorize } = require('../middleware/rbac');
-const { detectState } = require('../utils/stateDetector');
 
-// GET /api/drivers — admin only, state-filtered
-router.get('/', authenticate, authorize('super_admin', 'state_admin'), async (req, res) => {
+const adminAuth = (req, res, next) => {
+  if (req.headers['x-admin-password'] !== process.env.ADMIN_PASSWORD)
+    return res.status(403).json({ error: 'Admin access required' });
+  next();
+};
+
+// POST /api/drivers/register
+router.post('/register', async (req, res) => {
   try {
-    const filter = req.user.role === 'state_admin'
-      ? { $or: [{ currentState: req.user.assignedState._id }, { homeState: req.user.assignedState._id }] }
-      : {};
-    const drivers = await Driver.find(filter)
-      .populate('homeState currentState', 'name code')
-      .sort({ createdAt: -1 });
+    const { name, phone, truckNumber } = req.body;
+    if (!name || !phone || !truckNumber)
+      return res.status(400).json({ error: 'All fields required' });
+
+    const existing = await Driver.findOne({ phone });
+    if (existing) return res.json(existing);
+
+    const driver = await Driver.create({ name, phone, truckNumber });
+    res.status(201).json(driver);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/drivers/login
+router.post('/login', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ error: 'Phone required' });
+
+    const driver = await Driver.findOne({ phone });
+    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+    res.json(driver);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/drivers/:id/location
+router.patch('/:id/location', async (req, res) => {
+  try {
+    const { lat, lng } = req.body;
+    const parsedLat = parseFloat(lat);
+    const parsedLng = parseFloat(lng);
+    if (isNaN(parsedLat) || isNaN(parsedLng))
+      return res.status(400).json({ error: 'Invalid coordinates' });
+
+    const driver = await Driver.findByIdAndUpdate(
+      req.params.id,
+      { location: { type: 'Point', coordinates: [parsedLng, parsedLat] } },
+      { new: true }
+    );
+    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+    res.json(driver);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/drivers — admin only
+router.get('/', adminAuth, async (req, res) => {
+  try {
+    const drivers = await Driver.find().sort({ createdAt: -1 });
     res.json(drivers);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// PATCH /api/drivers/:id/location — driver updates own location, auto-detects state
-router.patch('/:id/location', authenticate, async (req, res) => {
+// GET /api/drivers/:id
+router.get('/:id', async (req, res) => {
   try {
-    if (req.user.role === 'driver' && req.user._id.toString() !== req.params.id)
-      return res.status(403).json({ error: 'Can only update your own location' });
-
-    const { lat, lng } = req.body;
-    const parsedLat = parseFloat(lat);
-    const parsedLng = parseFloat(lng);
-    if (isNaN(parsedLat) || isNaN(parsedLng)) return res.status(400).json({ error: 'Invalid coordinates' });
-
-    const detectedState = await detectState(parsedLat, parsedLng);
-    const update = {
-      location: { type: 'Point', coordinates: [parsedLng, parsedLat] },
-      ...(detectedState && { currentState: detectedState._id }),
-    };
-
-    const driver = await Driver.findByIdAndUpdate(req.params.id, update, { new: true })
-      .populate('homeState currentState', 'name code');
+    const driver = await Driver.findById(req.params.id);
     if (!driver) return res.status(404).json({ error: 'Driver not found' });
-
-    if (detectedState) {
-      req.app.get('io').to(`state_${detectedState._id}`).emit('driver_location', {
-        driverId: driver._id, name: driver.name, truckNumber: driver.truckNumber,
-        lat: parsedLat, lng: parsedLng, currentState: detectedState.name,
-      });
-    }
     res.json(driver);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// GET /api/drivers/:id — driver sees own, admins see based on state
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    if (req.user.role === 'driver' && req.user._id.toString() !== req.params.id)
-      return res.status(403).json({ error: 'Access denied' });
-
-    const driver = await Driver.findById(req.params.id).populate('homeState currentState', 'name code');
-    if (!driver) return res.status(404).json({ error: 'Driver not found' });
-
-    if (req.user.role === 'state_admin') {
-      const stateId = req.user.assignedState._id.toString();
-      if (driver.homeState?._id.toString() !== stateId && driver.currentState?._id.toString() !== stateId)
-        return res.status(403).json({ error: 'Access denied' });
-    }
-    res.json(driver);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// DELETE /api/drivers/:id — super admin only
-router.delete('/:id', authenticate, authorize('super_admin'), async (req, res) => {
+// DELETE /api/drivers/:id — admin only
+router.delete('/:id', adminAuth, async (req, res) => {
   try {
     await Driver.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/drivers/:id/password
+router.patch('/:id/password', async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!newPassword || newPassword.length < 4)
+      return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
+    const driver = await Driver.findById(req.params.id);
+    if (!driver) return res.status(404).json({ error: 'Driver not found' });
+
+    if (driver.password) {
+      if (!currentPassword) return res.status(400).json({ error: 'Current password required' });
+      const match = await driver.comparePassword(currentPassword);
+      if (!match) return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    driver.password = newPassword;
+    await driver.save();
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -1,4 +1,4 @@
-.map-wrapper { position: relative; }
+.map-wrapper { position: relative; height: calc(100vh - 56px); overflow: hidden; }
 
 .alert-banner {
   position: fixed;

@@ -7,7 +7,6 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(true);
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
   const [form, setForm] = useState({ name: '', truckNumber: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +21,7 @@ export default function Login() {
 
   const handleLogin = async () => {
     setLoading(true); setError('');
-    try { await login(phone.trim(), password.trim() || undefined); }
+    try { await login(phone.trim()); }
     catch (err) { setError(err.message); }
     finally { setLoading(false); }
   };
@@ -55,10 +54,6 @@ export default function Login() {
               <p className="step-label">Enter your phone number</p>
               <input className="login-input" placeholder="Phone Number" type="tel"
                 value={phone} onChange={(e) => setPhone(e.target.value)} maxLength={15} autoFocus />
-            {!isRegister && (
-              <input className="login-input" placeholder="Password (if set)" type="password"
-                value={password} onChange={(e) => setPassword(e.target.value)} />
-            )}
               {error && <p className="login-error">{error}</p>}
               <button className="login-btn" type="submit" disabled={loading}>
                 {loading ? 'Please wait...' : isRegister ? 'Next' : 'Login'}

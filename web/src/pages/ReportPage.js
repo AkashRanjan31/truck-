@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createReport } from '../services/api';
 import { emitNewReport } from '../services/socket';
 import { useNavigate } from 'react-router-dom';
+import { useDriver } from '../context/DriverContext';
 import './ReportPage.css';
 
 const ISSUE_TYPES = [
@@ -15,6 +16,7 @@ const ISSUE_TYPES = [
 
 export default function ReportPage() {
   const navigate = useNavigate();
+  const { driver } = useDriver();
   const [type, setType] = useState('');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -47,6 +49,9 @@ export default function ReportPage() {
       formData.append('description', description.trim());
       formData.append('lat', pos.coords.latitude);
       formData.append('lng', pos.coords.longitude);
+      formData.append('driverId', driver._id);
+      formData.append('driverName', driver.name);
+      formData.append('driverPhone', driver.phone || '');
       if (photo) formData.append('photo', photo);
 
       const { data } = await createReport(formData);

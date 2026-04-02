@@ -29,20 +29,14 @@ export default function ReportScreen({ navigation, route }) {
   const pickFromCamera = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') return Alert.alert('Permission denied');
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.6,
-    });
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.6 });
     if (!result.canceled) setPhoto(result.assets[0]);
   };
 
   const pickFromGallery = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return Alert.alert('Permission denied');
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      quality: 0.6,
-    });
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.6 });
     if (!result.canceled) setPhoto(result.assets[0]);
   };
 
@@ -76,6 +70,9 @@ export default function ReportScreen({ navigation, route }) {
       formData.append('description', description.trim());
       formData.append('lat', coords.latitude.toString());
       formData.append('lng', coords.longitude.toString());
+      formData.append('driverId', driver._id);
+      formData.append('driverName', driver.name);
+      formData.append('driverPhone', driver.phone || '');
 
       if (photo) {
         const uri = photo.uri;
@@ -110,9 +107,7 @@ export default function ReportScreen({ navigation, route }) {
             style={[styles.typeBtn, type === t.key && styles.typeBtnActive]}
             onPress={() => setType(t.key)}
           >
-            <Text style={[styles.typeBtnText, type === t.key && styles.typeBtnTextActive]}>
-              {t.label}
-            </Text>
+            <Text style={[styles.typeBtnText, type === t.key && styles.typeBtnTextActive]}>{t.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -145,11 +140,7 @@ export default function ReportScreen({ navigation, route }) {
       )}
 
       <TouchableOpacity style={styles.submitBtn} onPress={submit} disabled={loading}>
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitBtnText}>🚨 Submit Alert</Text>
-        )}
+        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>🚨 Submit Alert</Text>}
       </TouchableOpacity>
     </ScrollView>
   );

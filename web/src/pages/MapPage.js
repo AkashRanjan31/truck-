@@ -97,7 +97,7 @@ export default function MapPage() {
       <MapContainer
         center={userPos || [20.5937, 78.9629]}
         zoom={userPos ? 12 : 5}
-        style={{ height: 'calc(100vh - 56px)', width: '100%' }}
+        style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

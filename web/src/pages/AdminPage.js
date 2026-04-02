@@ -11,7 +11,7 @@ const ISSUE_ICONS = {
 const ISSUE_TYPES = ['all', 'police_harassment', 'extortion', 'unsafe_parking', 'accident_zone', 'poor_road', 'other'];
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem('admin') === '1');
+  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('adminPass'));
   const [pass, setPass] = useState('');
   const [passErr, setPassErr] = useState('');
   const [showChangePass, setShowChangePass] = useState(false);
@@ -64,7 +64,6 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       await adminLogin(pass);
-      sessionStorage.setItem('admin', '1');
       sessionStorage.setItem('adminPass', pass);
       setAuthed(true);
     } catch (err) { setPassErr(err.message); }
@@ -146,7 +145,7 @@ export default function AdminPage() {
         <form className="admin-login-card" onSubmit={handleLogin}>
           <div className="admin-login-icon">🔐</div>
           <h2>Admin Access</h2>
-          <input type="password" placeholder="Enter admin password" value={pass}
+          <input type="password" placeholder="Admin Password" value={pass}
             onChange={(e) => setPass(e.target.value)} className="admin-input" autoFocus />
           {passErr && <p className="admin-err">{passErr}</p>}
           <button className="admin-login-btn" type="submit">Login</button>
@@ -202,7 +201,7 @@ export default function AdminPage() {
         <button className="admin-logout" onClick={() => setShowChangePass(true)} style={{ marginBottom: 8 }}>
           🔑 Change Password
         </button>
-        <button className="admin-logout" onClick={() => { sessionStorage.removeItem('admin'); sessionStorage.removeItem('adminPass'); setAuthed(false); }}>
+        <button className="admin-logout" onClick={() => { sessionStorage.removeItem('adminPass'); setAuthed(false); }}>
           🚪 Logout
         </button>
       </aside>
