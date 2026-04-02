@@ -67,6 +67,12 @@
 .rc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .upvote-btn { background: #0f3460; color: #f5a623; border-radius: 8px; padding: 5px 12px; font-size: 13px; }
 .upvote-btn:hover { background: #1a4a8a; }
+.view-loc-btn {
+  background: rgba(52,152,219,0.15); border: 1px solid #3498db;
+  color: #3498db; border-radius: 8px; padding: 5px 12px; font-size: 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+.view-loc-btn:hover { background: rgba(52,152,219,0.3); color: #fff; }
 .confirm-btn {
   background: rgba(142,68,173,0.15); border: 1px solid #8e44ad;
   color: #c39bd3; border-radius: 8px; padding: 5px 12px; font-size: 13px;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getDriverReports, getAllReports, upvoteReport, userConfirmResolution } from '../services/api';
 import { useDriver } from '../context/DriverContext';
+import LocationMapModal from '../components/LocationMapModal';
 import './HistoryPage.css';
 
 const ISSUE_ICONS = {
@@ -22,6 +23,7 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [confirming, setConfirming] = useState(null);
+  const [pinLocation, setPinLocation] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -118,6 +120,23 @@ export default function HistoryPage() {
                 <div className="rc-actions" onClick={(e) => e.stopPropagation()}>
                   <button className="upvote-btn" onClick={() => handleUpvote(r._id)}>👍 {r.upvotes}</button>
 
+                  <button
+                    className="view-loc-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinLocation({
+                        lat: r.location?.coordinates?.[1],
+                        lng: r.location?.coordinates?.[0],
+                        title: r.type.replace(/_/g, ' ').toUpperCase(),
+                        type: r.type,
+                        description: r.description,
+                        address: r.address,
+                      });
+                    }}
+                  >
+                    📍 View Exact Location
+                  </button>
+
                   {canConfirm && (
                     <button
                       className="confirm-btn"
@@ -135,6 +154,8 @@ export default function HistoryPage() {
           })}
         </div>
       )}
+
+      <LocationMapModal location={pinLocation} onClose={() => setPinLocation(null)} />
     </div>
   );
 }

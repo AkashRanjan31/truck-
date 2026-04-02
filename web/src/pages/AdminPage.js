@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { getAllReportsAdmin, getAllDrivers, resolveReportWithPhoto, deleteReport, deleteDriver, adminLogin, adminChangePassword } from '../services/api';
 import { connectSocket } from '../services/socket';
+import LocationMapModal from '../components/LocationMapModal';
 import './AdminPage.css';
 
 const ISSUE_ICONS = {
@@ -32,6 +33,7 @@ export default function AdminPage() {
   const [selectedReport, setSelectedReport] = useState(null);
   const selectedReportRef = React.useRef(null);
   const setSelectedReportSafe = (r) => { selectedReportRef.current = r; setSelectedReport(r); };
+  const [pinLocation, setPinLocation] = useState(null);
   const [resolveId, setResolveId] = useState(null);
   const [resolveFile, setResolveFile] = useState(null);
   const [resolvePreview, setResolvePreview] = useState(null);
@@ -170,7 +172,6 @@ export default function AdminPage() {
   }
 
   const activeReports = reports.filter((r) => r.status === 'active');
-  const resolvedReports = reports.filter((r) => r.status === 'resolved');
   const userConfirmedReports = reports.filter((r) => r.userConfirmed);
   const resolvedByAdmin = reports.filter((r) => r.status === 'resolved' && r.resolvedBy === 'admin' && !r.userConfirmed);
 
@@ -324,6 +325,11 @@ export default function AdminPage() {
                           <td>{new Date(r.createdAt).toLocaleDateString()}</td>
                           <td className="action-cell" onClick={(e) => e.stopPropagation()}>
                             {r.photo && <span title="Has photo" style={{ fontSize: 16 }}>📷</span>}
+                            <button
+                              className="btn-locate"
+                              title="View Exact Location"
+                              onClick={(e) => { e.stopPropagation(); setPinLocation({ lat: r.location?.coordinates?.[1], lng: r.location?.coordinates?.[0], title: r.type.replace(/_/g, ' ').toUpperCase(), type: r.type, description: r.description, address: r.address }); }}
+                            >📍</button>
                             {r.status === 'active' && (
                               <button className="btn-resolve" onClick={(e) => openResolve(r._id, e)}>✅ Resolve</button>
                             )}
@@ -560,16 +566,23 @@ export default function AdminPage() {
               {selectedReport.status === 'active' && (
                 <button className="btn-resolve" onClick={(e) => openResolve(selectedReport._id, e)}>✅ Resolve</button>
               )}
+              <button
+                className="btn-locate-modal"
+                onClick={() => setPinLocation({ lat: selectedReport.location?.coordinates?.[1], lng: selectedReport.location?.coordinates?.[0], title: selectedReport.type.replace(/_/g, ' ').toUpperCase(), type: selectedReport.type, description: selectedReport.description, address: selectedReport.address })}
+              >
+                📍 View Exact Location
+              </button>
               <button className="btn-delete" onClick={(e) => handleDeleteReport(selectedReport._id, e)}>🗑️ Delete</button>
               <a className="map-link"
                 href={`https://www.google.com/maps?q=${selectedReport.location?.coordinates?.[1]},${selectedReport.location?.coordinates?.[0]}`}
                 target="_blank" rel="noreferrer">
-                🗺️ View on Map
+                🗺️ Open in Google Maps
               </a>
             </div>
           </div>
         </div>
       )}
+      <LocationMapModal location={pinLocation} onClose={() => setPinLocation(null)} />
     </div>
   );
 }

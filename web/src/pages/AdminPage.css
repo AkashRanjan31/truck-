@@ -127,6 +127,17 @@
   border-radius: 6px; padding: 4px 8px; font-size: 14px;
 }
 .btn-resolve:hover { background: rgba(46,204,113,0.3); }
+.btn-locate {
+  background: rgba(52,152,219,0.15); border: 1px solid #3498db;
+  border-radius: 6px; padding: 4px 8px; font-size: 14px; cursor: pointer;
+}
+.btn-locate:hover { background: rgba(52,152,219,0.3); }
+.btn-locate-modal {
+  background: rgba(52,152,219,0.15); border: 1px solid #3498db;
+  border-radius: 6px; padding: 5px 10px; font-size: 13px; color: #3498db;
+  cursor: pointer; font-weight: 600;
+}
+.btn-locate-modal:hover { background: rgba(52,152,219,0.3); color: #fff; }
 .btn-delete {
   background: rgba(231,76,60,0.15); border: 1px solid #e74c3c;
   border-radius: 6px; padding: 4px 8px; font-size: 14px;

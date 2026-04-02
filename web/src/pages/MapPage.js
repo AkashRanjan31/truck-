@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { getNearbyReports, getTrafficZones } from '../services/api';
 import { connectSocket } from '../services/socket';
 import { useNavigate } from 'react-router-dom';
 import { useDriver } from '../context/DriverContext';
+import LocationMapModal from '../components/LocationMapModal';
 import './MapPage.css';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -35,7 +36,13 @@ function createIcon(type) {
 
 function RecenterMap({ coords }) {
   const map = useMap();
-  useEffect(() => { if (coords) map.setView(coords, 12); }, [coords, map]);
+  const didFly = useRef(false);
+  useEffect(() => {
+    if (coords && !didFly.current) {
+      map.setView(coords, 13);
+      didFly.current = true;
+    }
+  }, [coords, map]);
   return null;
 }
 
@@ -48,6 +55,7 @@ export default function MapPage() {
   const [alert, setAlert] = useState(null);
   const [sosAlert, setSosAlert] = useState(null);
   const [showTraffic, setShowTraffic] = useState(true);
+  const [pinLocation, setPinLocation] = useState(null);
   const { driver } = useDriver();
   const navigate = useNavigate();
   const refreshTimer = useRef(null);
@@ -114,7 +122,7 @@ export default function MapPage() {
       socket.off('sos_nearby', handleSosNearby);
       socket.off('alert_nearby', handleNewReport);
     };
-  }, [driver?._id, fetchZones, refreshAll]);
+  }, [driver?._id, fetchZones, refreshAll, userPos]);
 
   const heavyCount = zones.filter((z) => z.level === 'Heavy').length;
   const moderateCount = zones.filter((z) => z.level === 'Moderate').length;
@@ -170,13 +178,18 @@ export default function MapPage() {
 
       <MapContainer
         center={userPos || [20.5937, 78.9629]}
-        zoom={userPos ? 12 : 5}
+        zoom={userPos ? 13 : 5}
+        minZoom={3}
+        maxZoom={19}
+        scrollWheelZoom={true}
+        zoomControl={false}
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; OpenStreetMap contributors'
         />
+        <ZoomControl position="bottomright" />
         {userPos && <RecenterMap coords={userPos} />}
 
         {/* Traffic zone circles */}
@@ -221,11 +234,35 @@ export default function MapPage() {
                 <p>{r.description}</p>
                 <small>👍 {r.upvotes} · {r.driverName}</small><br />
                 <small>{new Date(r.createdAt).toLocaleString()}</small>
+                <div style={{ marginTop: 8, display: 'flex', gap: 6 }}>
+                  <button
+                    className="popup-nav-btn"
+                    onClick={() => setPinLocation({
+                      lat: r.location.coordinates[1],
+                      lng: r.location.coordinates[0],
+                      title: r.type.replace(/_/g, ' ').toUpperCase(),
+                      type: r.type,
+                      description: r.description,
+                      address: r.address,
+                    })}
+                  >
+                    📍 View Exact Location
+                  </button>
+                  <a
+                    href={`https://www.google.com/maps/dir/?api=1&destination=${r.location.coordinates[1]},${r.location.coordinates[0]}`}
+                    target="_blank" rel="noreferrer" className="popup-gmaps-btn"
+                  >
+                    🧭 Navigate
+                  </a>
+                </div>
               </div>
             </Popup>
           </Marker>
         ))}
       </MapContainer>
+
+      {/* Location pin modal */}
+      <LocationMapModal location={pinLocation} onClose={() => setPinLocation(null)} />
     </div>
   );
 }
