@@ -24,11 +24,14 @@ export default function AdminPage() {
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [feed, setFeed] = useState([]);
+  const [sosList, setSosList] = useState([]);
   const [filter, setFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [search, setSearch] = useState('');
 
   const [selectedReport, setSelectedReport] = useState(null);
+  const selectedReportRef = React.useRef(null);
+  const setSelectedReportSafe = (r) => { selectedReportRef.current = r; setSelectedReport(r); };
   const [resolveId, setResolveId] = useState(null);
   const [resolveFile, setResolveFile] = useState(null);
   const [resolvePreview, setResolvePreview] = useState(null);
@@ -53,11 +56,23 @@ export default function AdminPage() {
       setFeed((prev) => [{ ...r, _feedTime: new Date() }, ...prev].slice(0, 20));
     };
     const handleEmergency = (d) => {
-      setFeed((prev) => [{ ...d, type: '__emergency__', _feedTime: new Date() }, ...prev].slice(0, 20));
+      const item = { ...d, type: '__emergency__', _feedTime: new Date() };
+      setFeed((prev) => [item, ...prev].slice(0, 20));
+      setSosList((prev) => [item, ...prev]);
+      // Play alert sound
+      try { new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play(); } catch {}
     };
     socket.on('alert_nearby', handleAlert);
     socket.on('emergency_alert', handleEmergency);
-    return () => { socket.off('alert_nearby', handleAlert); socket.off('emergency_alert', handleEmergency); };
+    socket.on('report_user_confirmed', (r) => {
+      setReports((prev) => prev.map((x) => x._id === r._id ? r : x));
+      if (selectedReportRef.current?._id === r._id) setSelectedReportSafe(r);
+    });
+    return () => {
+      socket.off('alert_nearby', handleAlert);
+      socket.off('emergency_alert', handleEmergency);
+      socket.off('report_user_confirmed');
+    };
   }, [authed, loadData]);
 
   const handleLogin = async (e) => {
@@ -87,7 +102,7 @@ export default function AdminPage() {
     setResolveId(id);
     setResolveFile(null);
     setResolvePreview(null);
-    setSelectedReport(null);
+    setSelectedReportSafe(null);
   };
 
   const handleResolveFileChange = (e) => {
@@ -115,7 +130,7 @@ export default function AdminPage() {
     try {
       await deleteReport(id);
       setReports((prev) => prev.filter((r) => r._id !== id));
-      if (selectedReport?._id === id) setSelectedReport(null);
+      if (selectedReportRef.current?._id === id) setSelectedReportSafe(null);
     } catch {}
   };
 
@@ -156,9 +171,17 @@ export default function AdminPage() {
 
   const activeReports = reports.filter((r) => r.status === 'active');
   const resolvedReports = reports.filter((r) => r.status === 'resolved');
+  const userConfirmedReports = reports.filter((r) => r.userConfirmed);
+  const resolvedByAdmin = reports.filter((r) => r.status === 'resolved' && r.resolvedBy === 'admin' && !r.userConfirmed);
 
   const filteredReports = reports
-    .filter((r) => filter === 'all' || r.status === filter)
+    .filter((r) => {
+      if (filter === 'all') return true;
+      if (filter === 'active') return r.status === 'active';
+      if (filter === 'resolved_admin') return r.status === 'resolved' && r.resolvedBy === 'admin' && !r.userConfirmed;
+      if (filter === 'user_confirmed') return r.userConfirmed === true;
+      return r.status === filter;
+    })
     .filter((r) => typeFilter === 'all' || r.type === typeFilter)
     .filter((r) =>
       !search ||
@@ -189,12 +212,14 @@ export default function AdminPage() {
           {[
             { key: 'reports', icon: '📋', label: 'Reports' },
             { key: 'drivers', icon: '👤', label: 'Drivers' },
+            { key: 'sos', icon: '🚨', label: 'SOS Alerts' },
             { key: 'feed', icon: '⚡', label: 'Live Feed' },
           ].map((t) => (
             <button key={t.key} className={`admin-nav-btn ${tab === t.key ? 'active' : ''}`}
               onClick={() => { setTab(t.key); setSearch(''); }}>
               {t.icon} {t.label}
               {t.key === 'feed' && feed.length > 0 && <span className="feed-badge">{feed.length}</span>}
+              {t.key === 'sos' && sosList.length > 0 && <span className="feed-badge">{sosList.length}</span>}
             </button>
           ))}
         </nav>
@@ -212,8 +237,10 @@ export default function AdminPage() {
           {[
             { label: 'Total Reports', value: reports.length, color: '#f5a623' },
             { label: 'Active', value: activeReports.length, color: '#e74c3c' },
-            { label: 'Resolved', value: resolvedReports.length, color: '#2ecc71' },
+            { label: 'Resolved (Admin)', value: resolvedByAdmin.length, color: '#2ecc71' },
+            { label: 'User Confirmed', value: userConfirmedReports.length, color: '#8e44ad' },
             { label: 'Drivers', value: drivers.length, color: '#3498db' },
+            { label: 'SOS Today', value: sosList.length, color: '#c0392b' },
           ].map((s) => (
             <div className="stat-card" key={s.label}>
               <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
@@ -230,9 +257,14 @@ export default function AdminPage() {
           {tab === 'reports' && (
             <>
               <div className="filter-btns">
-                {['all', 'active', 'resolved'].map((f) => (
-                  <button key={f} className={`filter-btn ${filter === f ? 'active' : ''}`} onClick={() => setFilter(f)}>
-                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'active', label: '🔴 Active' },
+                  { key: 'resolved_admin', label: '✅ Resolved (Admin)' },
+                  { key: 'user_confirmed', label: '💜 User Confirmed' },
+                ].map((f) => (
+                  <button key={f.key} className={`filter-btn ${filter === f.key ? 'active' : ''}`} onClick={() => setFilter(f.key)}>
+                    {f.label}
                   </button>
                 ))}
               </div>
@@ -268,7 +300,7 @@ export default function AdminPage() {
                     {filteredReports.map((r) => (
                       <React.Fragment key={r._id}>
                         <tr className={r.status === 'resolved' ? 'row-resolved' : ''}
-                          style={{ cursor: 'pointer' }} onClick={() => setSelectedReport(r)}>
+                          style={{ cursor: 'pointer' }} onClick={() => setSelectedReportSafe(r)}>
                           <td><span className="type-cell">{ISSUE_ICONS[r.type]} {r.type.replace(/_/g, ' ')}</span></td>
                           <td className="desc-cell" title={r.description}>{r.description}</td>
                           <td>{r.driverName}</td>
@@ -279,7 +311,16 @@ export default function AdminPage() {
                             </a>
                           </td>
                           <td>{r.upvotes}</td>
-                          <td><span className={`status-badge ${r.status}`}>{r.status}</span></td>
+                          <td>
+                            {r.userConfirmed
+                              ? <span className="status-badge user-confirmed">💜 User Confirmed</span>
+                              : r.status === 'resolved' && r.resolvedBy === 'admin'
+                              ? <span className="status-badge resolved-admin">✅ Resolved (Admin)</span>
+                              : r.status === 'resolved'
+                              ? <span className="status-badge resolved">Resolved</span>
+                              : <span className="status-badge active">Active</span>
+                            }
+                          </td>
                           <td>{new Date(r.createdAt).toLocaleDateString()}</td>
                           <td className="action-cell" onClick={(e) => e.stopPropagation()}>
                             {r.photo && <span title="Has photo" style={{ fontSize: 16 }}>📷</span>}
@@ -358,6 +399,40 @@ export default function AdminPage() {
               </div>
             )}
 
+            {/* SOS Alerts Tab */}
+            {tab === 'sos' && (
+              <div className="sos-list">
+                {sosList.length === 0 && <p className="empty-row">No SOS alerts yet. Waiting...</p>}
+                {sosList.map((item, i) => (
+                  <div key={i} className="sos-card">
+                    <div className="sos-card-header">
+                      <span className="sos-card-icon">🚨</span>
+                      <div className="sos-card-info">
+                        <strong>{item.driverName} ({item.truckNumber})</strong>
+                        <span>📞 {item.phone}</span>
+                      </div>
+                      <span className="sos-card-time">{new Date(item._feedTime).toLocaleTimeString()}</span>
+                    </div>
+                    <div className="sos-card-body">
+                      <p>📍 {item.address}</p>
+                      {item.nearbyCount !== undefined && (
+                        <p>👥 {item.nearbyCount} nearby driver{item.nearbyCount !== 1 ? 's' : ''} notified</p>
+                      )}
+                    </div>
+                    <div className="sos-card-actions">
+                      <a href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
+                        target="_blank" rel="noreferrer" className="sos-map-btn">
+                        🗺️ View on Map
+                      </a>
+                      <a href={`tel:${item.phone}`} className="sos-call-btn">
+                        📞 Call Driver
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Live Feed Tab */}
             {tab === 'feed' && (
               <div className="feed-list">
@@ -368,8 +443,17 @@ export default function AdminPage() {
                     <div className="feed-body">
                       {item.type === '__emergency__' ? (
                         <>
-                          <strong>EMERGENCY — {item.driverName} ({item.truckNumber})</strong>
+                          <strong>🚨 SOS — {item.driverName} ({item.truckNumber})</strong>
                           <p>📍 {item.address} · 📞 {item.phone}</p>
+                          {item.nearbyCount !== undefined && (
+                            <p style={{ color: '#e74c3c', fontSize: 11 }}>👥 {item.nearbyCount} nearby driver{item.nearbyCount !== 1 ? 's' : ''} notified</p>
+                          )}
+                          <a href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
+                            target="_blank" rel="noreferrer"
+                            style={{ color: '#3498db', fontSize: 12, textDecoration: 'none' }}
+                            onClick={(e) => e.stopPropagation()}>
+                            🗺️ View on Map
+                          </a>
                         </>
                       ) : (
                         <>
@@ -408,20 +492,25 @@ export default function AdminPage() {
       )}
 
       {selectedReport && (
-        <div className="modal-overlay" onClick={() => setSelectedReport(null)}>
+        <div className="modal-overlay" onClick={() => setSelectedReportSafe(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedReport(null)}>✕</button>
+            <button className="modal-close" onClick={() => setSelectedReportSafe(null)}>✕</button>
             <h3 className="modal-title">
               {ISSUE_ICONS[selectedReport.type]} {selectedReport.type.replace(/_/g, ' ').toUpperCase()}
             </h3>
-            <span className={`status-badge ${selectedReport.status}`} style={{ marginBottom: 16, display: 'inline-block' }}>
-              {selectedReport.status}
-            </span>
+
+            {/* Status badge */}
+            {selectedReport.userConfirmed
+              ? <span className="status-badge user-confirmed" style={{ marginBottom: 16, display: 'inline-block' }}>💜 User Confirmed</span>
+              : selectedReport.status === 'resolved' && selectedReport.resolvedBy === 'admin'
+              ? <span className="status-badge resolved-admin" style={{ marginBottom: 16, display: 'inline-block' }}>✅ Resolved (Admin)</span>
+              : <span className={`status-badge ${selectedReport.status}`} style={{ marginBottom: 16, display: 'inline-block' }}>{selectedReport.status}</span>
+            }
 
             <div className="modal-grid">
               <div className="modal-field"><span className="mf-label">Driver</span><span className="mf-value">{selectedReport.driverName}</span></div>
               <div className="modal-field"><span className="mf-label">Upvotes</span><span className="mf-value">👍 {selectedReport.upvotes}</span></div>
-              <div className="modal-field"><span className="mf-label">Date</span><span className="mf-value">{new Date(selectedReport.createdAt).toLocaleString()}</span></div>
+              <div className="modal-field"><span className="mf-label">Reported On</span><span className="mf-value">{new Date(selectedReport.createdAt).toLocaleString()}</span></div>
               <div className="modal-field"><span className="mf-label">Location</span>
                 <a className="mf-value coord-link"
                   href={`https://www.google.com/maps?q=${selectedReport.location?.coordinates?.[1]},${selectedReport.location?.coordinates?.[0]}`}
@@ -429,7 +518,25 @@ export default function AdminPage() {
                   📍 {selectedReport.address || `${selectedReport.location?.coordinates?.[1]?.toFixed(5)}, ${selectedReport.location?.coordinates?.[0]?.toFixed(5)}`}
                 </a>
               </div>
+              {selectedReport.resolvedAt && (
+                <div className="modal-field"><span className="mf-label">Resolved On</span><span className="mf-value">{new Date(selectedReport.resolvedAt).toLocaleString()}</span></div>
+              )}
+              {selectedReport.resolvedBy && (
+                <div className="modal-field"><span className="mf-label">Resolved By</span><span className="mf-value" style={{ textTransform: 'capitalize' }}>{selectedReport.resolvedBy}</span></div>
+              )}
             </div>
+
+            {/* User confirmation block */}
+            {selectedReport.userConfirmed && (
+              <div className="user-confirm-block">
+                <span>💜</span>
+                <div>
+                  <strong>User Confirmed Resolution</strong>
+                  <p>{selectedReport.driverName} confirmed this issue is resolved</p>
+                  <p>on {new Date(selectedReport.userConfirmedAt).toLocaleString()}</p>
+                </div>
+              </div>
+            )}
 
             <div className="modal-field" style={{ marginTop: 12 }}>
               <span className="mf-label">Description</span>

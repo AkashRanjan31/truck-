@@ -102,7 +102,7 @@ router.patch('/:id/upvote', async (req, res) => {
 // PATCH /api/reports/:id/resolve — admin only
 router.patch('/:id/resolve', adminAuth, upload.single('resolvedPhoto'), async (req, res) => {
   try {
-    const update = { status: 'resolved' };
+    const update = { status: 'resolved', resolvedBy: 'admin', resolvedAt: new Date() };
     if (req.file) update.resolvedPhoto = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
     const report = await Report.findByIdAndUpdate(req.params.id, update, { new: true });
@@ -110,6 +110,29 @@ router.patch('/:id/resolve', adminAuth, upload.single('resolvedPhoto'), async (r
 
     req.app.get('io').emit('report_resolved', report);
     res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/reports/:id/user-confirm — driver confirms their issue is resolved
+router.patch('/:id/user-confirm', async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Not found' });
+    if (report.userConfirmed) return res.status(400).json({ error: 'Already confirmed' });
+
+    const update = {
+      userConfirmed: true,
+      userConfirmedAt: new Date(),
+      status: 'resolved',
+      resolvedBy: report.resolvedBy || 'user',
+      resolvedAt: report.resolvedAt || new Date(),
+    };
+
+    const updated = await Report.findByIdAndUpdate(report._id, update, { new: true });
+    req.app.get('io').emit('report_user_confirmed', updated);
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

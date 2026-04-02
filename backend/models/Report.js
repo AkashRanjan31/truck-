@@ -18,6 +18,10 @@ const reportSchema = new mongoose.Schema({
   driverName: { type: String, required: true },
   driverPhone: { type: String, default: '' },
   status: { type: String, enum: ['active', 'resolved'], default: 'active' },
+  resolvedBy: { type: String, enum: ['admin', 'user', null], default: null },
+  resolvedAt: { type: Date, default: null },
+  userConfirmed: { type: Boolean, default: false },
+  userConfirmedAt: { type: Date, default: null },
   upvotes: { type: Number, default: 0 },
 }, { timestamps: true });
 

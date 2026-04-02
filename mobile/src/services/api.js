@@ -31,5 +31,6 @@ export const upvoteReport = (id) => api.patch(`/reports/${id}/upvote`);
 export const resolveReport = (id) => api.patch(`/reports/${id}/resolve`);
 export const changeDriverPassword = (id, currentPassword, newPassword) =>
   api.patch(`/drivers/${id}/password`, { currentPassword, newPassword });
+export const triggerSOS = (data) => api.post('/emergency', data);
 
 export default api;

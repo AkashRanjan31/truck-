@@ -50,10 +50,12 @@
 .rc-info span { color: #888; font-size: 11px; }
 
 .rc-status {
-  font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 6px; color: #fff;
+  font-size: 11px; font-weight: bold; padding: 3px 10px; border-radius: 6px; color: #fff; white-space: nowrap;
 }
 .rc-status.active { background: #e74c3c; }
 .rc-status.resolved { background: #2ecc71; }
+.rc-status.resolved-admin { background: #27ae60; }
+.rc-status.user-confirmed { background: #8e44ad; }
 
 .rc-desc { color: #ddd; font-size: 14px; line-height: 1.5; margin-bottom: 6px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .rc-desc.expanded { display: block; -webkit-line-clamp: unset; }
@@ -62,11 +64,21 @@
 .rc-addr:hover { color: #5dade2; }
 .rc-photo { width: 100%; max-height: 220px; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
 
-.rc-actions { display: flex; align-items: center; gap: 8px; }
+.rc-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .upvote-btn { background: #0f3460; color: #f5a623; border-radius: 8px; padding: 5px 12px; font-size: 13px; }
 .upvote-btn:hover { background: #1a4a8a; }
-.resolve-btn { background: #1e3a2f; color: #2ecc71; border-radius: 8px; padding: 5px 12px; font-size: 13px; }
-.resolve-btn:hover { background: #27ae60; color: #fff; }
+.confirm-btn {
+  background: rgba(142,68,173,0.15); border: 1px solid #8e44ad;
+  color: #c39bd3; border-radius: 8px; padding: 5px 12px; font-size: 13px;
+  cursor: pointer; transition: all 0.2s;
+}
+.confirm-btn:hover { background: rgba(142,68,173,0.3); color: #fff; }
+.confirm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.confirm-info {
+  background: rgba(142,68,173,0.1); border: 1px solid #8e44ad;
+  border-radius: 8px; padding: 8px 12px; color: #c39bd3;
+  font-size: 12px; margin-bottom: 8px;
+}
 .expand-hint { margin-left: auto; color: #555; font-size: 12px; }
 
 .empty-msg { text-align: center; color: #888; padding: 80px 20px; font-size: 15px; }

@@ -1,13 +1,13 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getNearbyReports } from '../services/api';
-import { connectSocket, getSocket } from '../services/socket';
+import { getNearbyReports, getTrafficZones } from '../services/api';
+import { connectSocket } from '../services/socket';
 import { useNavigate } from 'react-router-dom';
+import { useDriver } from '../context/DriverContext';
 import './MapPage.css';
 
-// Fix leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -19,7 +19,6 @@ const ISSUE_ICONS = {
   police_harassment: '👮', extortion: '💰', unsafe_parking: '🅿️',
   accident_zone: '💥', poor_road: '🚧', other: '⚠️',
 };
-
 const MARKER_COLORS = {
   police_harassment: '#e74c3c', extortion: '#e67e22', unsafe_parking: '#3498db',
   accident_zone: '#c0392b', poor_road: '#95a5a6', other: '#f39c12',
@@ -40,11 +39,18 @@ function RecenterMap({ coords }) {
   return null;
 }
 
+const TRAFFIC_LEVEL_LABEL = { Heavy: '🔴 Heavy', Moderate: '🟠 Moderate', Light: '🟢 Light' };
+
 export default function MapPage() {
   const [reports, setReports] = useState([]);
+  const [zones, setZones] = useState([]);
   const [userPos, setUserPos] = useState(null);
   const [alert, setAlert] = useState(null);
+  const [sosAlert, setSosAlert] = useState(null);
+  const [showTraffic, setShowTraffic] = useState(true);
+  const { driver } = useDriver();
   const navigate = useNavigate();
+  const refreshTimer = useRef(null);
 
   const fetchReports = useCallback(async (lat, lng) => {
     try {
@@ -53,16 +59,32 @@ export default function MapPage() {
     } catch {}
   }, []);
 
+  const fetchZones = useCallback(async (lat, lng) => {
+    try {
+      const { data } = await getTrafficZones(lat, lng);
+      setZones(data);
+    } catch {}
+  }, []);
+
+  const refreshAll = useCallback((lat, lng) => {
+    fetchReports(lat, lng);
+    fetchZones(lat, lng);
+  }, [fetchReports, fetchZones]);
+
   useEffect(() => {
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
-        setUserPos([pos.coords.latitude, pos.coords.longitude]);
-        fetchReports(pos.coords.latitude, pos.coords.longitude);
+        const { latitude: lat, longitude: lng } = pos.coords;
+        setUserPos([lat, lng]);
+        refreshAll(lat, lng);
+        // Auto-refresh zones every 60s
+        refreshTimer.current = setInterval(() => refreshAll(lat, lng), 60000);
       },
-      () => fetchReports(20.5937, 78.9629)
+      () => refreshAll(20.5937, 78.9629)
     );
 
-    const socket = connectSocket();
+    const socket = connectSocket(driver?._id);
+
     const handleAlert = (report) => {
       setReports((prev) => prev.find((r) => r._id === report._id) ? prev : [report, ...prev]);
       setAlert(report);
@@ -71,13 +93,47 @@ export default function MapPage() {
     const handleEmergency = (data) => {
       window.alert(`🚨 EMERGENCY!\n${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}`);
     };
+    const handleSosNearby = (data) => {
+      setSosAlert(data);
+      setTimeout(() => setSosAlert(null), 15000);
+    };
+    // Refresh zones when a new report comes in
+    const handleNewReport = () => {
+      if (userPos) fetchZones(userPos[0], userPos[1]);
+    };
+
     socket.on('alert_nearby', handleAlert);
     socket.on('emergency_alert', handleEmergency);
-    return () => { socket.off('alert_nearby', handleAlert); socket.off('emergency_alert', handleEmergency); };
-  }, [fetchReports]);
+    socket.on('sos_nearby', handleSosNearby);
+    socket.on('alert_nearby', handleNewReport);
+
+    return () => {
+      clearInterval(refreshTimer.current);
+      socket.off('alert_nearby', handleAlert);
+      socket.off('emergency_alert', handleEmergency);
+      socket.off('sos_nearby', handleSosNearby);
+      socket.off('alert_nearby', handleNewReport);
+    };
+  }, [driver?._id, fetchZones, refreshAll]);
+
+  const heavyCount = zones.filter((z) => z.level === 'Heavy').length;
+  const moderateCount = zones.filter((z) => z.level === 'Moderate').length;
+  const lightCount = zones.filter((z) => z.level === 'Light').length;
 
   return (
     <div className="map-wrapper">
+      {sosAlert && (
+        <div className="alert-banner sos-banner">
+          <span>🆘</span>
+          <div>
+            <strong>🚨 SOS NEARBY — {sosAlert.driverName} ({sosAlert.truckNumber})</strong>
+            <p>📍 {sosAlert.address} · 📞 {sosAlert.phone}</p>
+          </div>
+          <a href={`https://www.google.com/maps?q=${sosAlert.lat},${sosAlert.lng}`}
+            target="_blank" rel="noreferrer" className="sos-map-link">🗺️ Map</a>
+          <button className="sos-dismiss" onClick={() => setSosAlert(null)}>✕</button>
+        </div>
+      )}
       {alert && (
         <div className="alert-banner">
           <span>{ISSUE_ICONS[alert.type]}</span>
@@ -88,11 +144,29 @@ export default function MapPage() {
         </div>
       )}
 
+      {/* Top controls */}
       <div className="map-controls">
         <span className="map-count">{reports.length} alerts nearby</span>
-        <button className="map-btn" onClick={() => userPos && fetchReports(userPos[0], userPos[1])}>🔄 Refresh</button>
+        <button
+          className={`map-btn traffic-toggle ${showTraffic ? 'active' : ''}`}
+          onClick={() => setShowTraffic((v) => !v)}
+          title="Toggle traffic zones"
+        >
+          🚦 Traffic
+        </button>
+        <button className="map-btn" onClick={() => userPos && refreshAll(userPos[0], userPos[1])}>🔄 Refresh</button>
         <button className="map-btn report-btn" onClick={() => navigate('/report')}>+ Report Issue</button>
       </div>
+
+      {/* Traffic legend */}
+      {showTraffic && (
+        <div className="traffic-legend">
+          <span className="legend-title">Traffic Zones</span>
+          <span className="legend-item red">🔴 Heavy ({heavyCount})</span>
+          <span className="legend-item orange">🟠 Moderate ({moderateCount})</span>
+          <span className="legend-item green">🟢 Light ({lightCount})</span>
+        </div>
+      )}
 
       <MapContainer
         center={userPos || [20.5937, 78.9629]}
@@ -104,6 +178,37 @@ export default function MapPage() {
           attribution='&copy; OpenStreetMap contributors'
         />
         {userPos && <RecenterMap coords={userPos} />}
+
+        {/* Traffic zone circles */}
+        {showTraffic && zones.map((zone, i) => (
+          <Circle
+            key={i}
+            center={[zone.lat, zone.lng]}
+            radius={800}
+            pathOptions={{
+              color: zone.color,
+              fillColor: zone.color,
+              fillOpacity: 0.25,
+              weight: 2,
+              opacity: 0.7,
+            }}
+          >
+            <Popup>
+              <div className="popup traffic-popup">
+                <strong>{TRAFFIC_LEVEL_LABEL[zone.level]} Traffic</strong>
+                <p>📊 Congestion score: {zone.count}</p>
+                <p>⚠️ Issues: {zone.types.map((t) => t.replace(/_/g, ' ')).join(', ')}</p>
+                {zone.level === 'Heavy' && (
+                  <p style={{ color: '#e74c3c', fontWeight: 'bold', marginTop: 4 }}>
+                    ⚠️ Consider an alternative route
+                  </p>
+                )}
+              </div>
+            </Popup>
+          </Circle>
+        ))}
+
+        {/* Report markers */}
         {reports.map((r) => (
           <Marker
             key={r._id}

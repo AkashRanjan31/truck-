@@ -17,6 +17,19 @@
 .alert-banner strong { display: block; color: #fff; font-size: 14px; }
 .alert-banner p { color: rgba(255,255,255,0.85); font-size: 12px; margin: 2px 0 0; }
 
+.sos-banner { background: #8e44ad; top: 56px; }
+.sos-map-link {
+  margin-left: auto; background: rgba(255,255,255,0.2);
+  color: #fff; padding: 4px 10px; border-radius: 6px;
+  font-size: 12px; text-decoration: none; white-space: nowrap;
+}
+.sos-map-link:hover { background: rgba(255,255,255,0.35); }
+.sos-dismiss {
+  background: none; color: rgba(255,255,255,0.7);
+  font-size: 16px; padding: 0 4px; margin-left: 4px;
+}
+.sos-dismiss:hover { color: #fff; }
+
 @keyframes slideDown { from { transform: translateY(-100%); } to { transform: translateY(0); } }
 
 .map-controls {
@@ -35,6 +48,33 @@
 }
 
 .map-count { color: #f5a623; font-size: 13px; font-weight: bold; }
+
+.traffic-toggle { background: #0f3460; color: #aaa; }
+.traffic-toggle.active { background: #1a4a8a; color: #fff; border: 1px solid #3498db; }
+
+/* Traffic legend */
+.traffic-legend {
+  position: absolute;
+  bottom: 40px;
+  left: 16px;
+  z-index: 1000;
+  background: rgba(26,26,46,0.92);
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  backdrop-filter: blur(4px);
+}
+.legend-title { color: #f5a623; font-weight: bold; font-size: 12px; margin-right: 4px; }
+.legend-item { color: #ddd; font-size: 12px; }
+.legend-item.red { color: #e74c3c; }
+.legend-item.orange { color: #e67e22; }
+.legend-item.green { color: #2ecc71; }
+
+.traffic-popup strong { color: #1a1a2e; font-size: 13px; display: block; margin-bottom: 4px; }
 
 .map-btn {
   background: #0f3460;

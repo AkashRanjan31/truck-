@@ -21,6 +21,8 @@ export const updateLocation = (id, lat, lng) => api.patch(`/drivers/${id}/locati
 export const createReport = (formData) => api.post('/reports', formData);
 export const getNearbyReports = (lat, lng, radius = 50000) =>
   api.get('/reports', { params: { lat, lng, radius } });
+export const getTrafficZones = (lat, lng, radius = 50000) =>
+  api.get('/traffic/zones', { params: { lat, lng, radius } });
 export const getAllReports = () => api.get('/reports');
 export const getAllReportsAdmin = () =>
   api.get('/reports/admin', {
@@ -28,6 +30,7 @@ export const getAllReportsAdmin = () =>
   });
 export const getDriverReports = (driverId) => api.get(`/reports/driver/${driverId}`);
 export const upvoteReport = (id) => api.patch(`/reports/${id}/upvote`);
+export const userConfirmResolution = (id) => api.patch(`/reports/${id}/user-confirm`);
 export const resolveReportWithPhoto = (id, formData) =>
   api.patch(`/reports/${id}/resolve`, formData, {
     headers: { 'x-admin-password': sessionStorage.getItem('adminPass') || '' },
@@ -47,6 +50,7 @@ export const deleteDriver = (id) =>
   });
 
 export const adminLogin = (password) => api.post('/admin/login', { password });
+export const triggerSOS = (data) => api.post('/emergency', data);
 export const changeDriverPassword = (id, currentPassword, newPassword) =>
   api.patch(`/drivers/${id}/password`, { currentPassword, newPassword });
 export const adminChangePassword = (currentPassword, newPassword) =>

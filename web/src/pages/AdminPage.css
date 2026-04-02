@@ -53,7 +53,7 @@
 .admin-main { margin-left: 200px; flex: 1; padding: 24px; }
 
 /* Stats */
-.admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.admin-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; margin-bottom: 24px; }
 .stat-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: 12px; padding: 20px; text-align: center;
@@ -103,10 +103,22 @@
 .type-cell { text-transform: capitalize; white-space: nowrap; }
 
 .status-badge {
-  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; text-transform: uppercase; white-space: nowrap;
 }
 .status-badge.active { background: rgba(231,76,60,0.2); color: #e74c3c; }
 .status-badge.resolved { background: rgba(46,204,113,0.2); color: #2ecc71; }
+.status-badge.resolved-admin { background: rgba(39,174,96,0.2); color: #27ae60; }
+.status-badge.user-confirmed { background: rgba(142,68,173,0.2); color: #c39bd3; }
+
+/* User confirmation block in modal */
+.user-confirm-block {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: rgba(142,68,173,0.1); border: 1px solid #8e44ad;
+  border-radius: 10px; padding: 14px; margin-top: 16px;
+}
+.user-confirm-block span { font-size: 24px; flex-shrink: 0; }
+.user-confirm-block strong { display: block; color: #c39bd3; font-size: 14px; margin-bottom: 4px; }
+.user-confirm-block p { color: #aaa; font-size: 12px; margin: 2px 0; }
 
 .action-cell { white-space: nowrap; }
 .action-cell button, .action-cell span { margin-right: 4px; }
@@ -201,3 +213,31 @@
   .admin-main { margin-left: 60px; padding: 16px; }
   .admin-stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* SOS Alerts */
+.sos-list { display: flex; flex-direction: column; gap: 14px; }
+.sos-card {
+  background: rgba(142,68,173,0.08); border: 1px solid #8e44ad;
+  border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  animation: slideDown 0.3s ease;
+}
+.sos-card-header { display: flex; align-items: center; gap: 12px; }
+.sos-card-icon { font-size: 28px; }
+.sos-card-info { flex: 1; }
+.sos-card-info strong { display: block; color: #fff; font-size: 15px; }
+.sos-card-info span { color: #aaa; font-size: 12px; }
+.sos-card-time { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.sos-card-body p { color: #ddd; font-size: 13px; margin-bottom: 4px; }
+.sos-card-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.sos-map-btn {
+  background: rgba(52,152,219,0.15); border: 1px solid #3498db;
+  border-radius: 8px; padding: 7px 14px; font-size: 13px; color: #3498db;
+  text-decoration: none; font-weight: 600;
+}
+.sos-map-btn:hover { background: rgba(52,152,219,0.3); }
+.sos-call-btn {
+  background: rgba(46,204,113,0.15); border: 1px solid #2ecc71;
+  border-radius: 8px; padding: 7px 14px; font-size: 13px; color: #2ecc71;
+  text-decoration: none; font-weight: 600;
+}
+.sos-call-btn:hover { background: rgba(46,204,113,0.3); }

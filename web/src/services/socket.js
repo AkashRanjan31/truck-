@@ -2,13 +2,19 @@ import { io } from 'socket.io-client';
 
 let socket = null;
 
-export const connectSocket = () => {
-  if (socket?.connected) return socket;
+export const connectSocket = (driverId) => {
+  if (socket?.connected) {
+    if (driverId) socket.emit('register_driver', driverId);
+    return socket;
+  }
   socket = io('http://localhost:5000', {
     transports: ['websocket'],
     reconnection: true,
     reconnectionAttempts: 10,
     reconnectionDelay: 2000,
+  });
+  socket.on('connect', () => {
+    if (driverId) socket.emit('register_driver', driverId);
   });
   return socket;
 };

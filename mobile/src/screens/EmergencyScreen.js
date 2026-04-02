@@ -1,12 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Vibration, Animated } from 'react-native';
 import * as Location from 'expo-location';
-import { emitEmergency } from '../services/socket';
+import { triggerSOS } from '../services/api';
 import { useDriver } from '../services/DriverContext';
 
 export default function EmergencyScreen() {
   const { driver } = useDriver();
   const [sent, setSent] = useState(false);
+  const [notified, setNotified] = useState(0);
   const scale = useRef(new Animated.Value(1)).current;
   const timerRef = useRef(null);
 
@@ -25,7 +26,7 @@ export default function EmergencyScreen() {
       if (status !== 'granted') return Alert.alert('Error', 'Location permission required');
 
       const loc = await Location.getCurrentPositionAsync({});
-      emitEmergency({
+      const { data } = await triggerSOS({
         driverId: driver._id,
         driverName: driver.name,
         truckNumber: driver.truckNumber,
@@ -33,11 +34,12 @@ export default function EmergencyScreen() {
         lat: loc.coords.latitude,
         lng: loc.coords.longitude,
         address: `${loc.coords.latitude.toFixed(4)}, ${loc.coords.longitude.toFixed(4)}`,
-        timestamp: new Date().toISOString(),
       });
+
       setSent(true);
+      setNotified(data.notified || 0);
       clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setSent(false), 10000);
+      timerRef.current = setTimeout(() => { setSent(false); setNotified(0); }, 10000);
     } catch {
       Alert.alert('Error', 'Could not send emergency alert. Check your connection.');
     }
@@ -58,9 +60,15 @@ export default function EmergencyScreen() {
         >
           <Text style={styles.emergencyIcon}>🆘</Text>
           <Text style={styles.emergencyText}>{sent ? 'ALERT SENT!' : 'EMERGENCY'}</Text>
-          <Text style={styles.emergencySubText}>{sent ? 'Help is on the way' : 'Tap to alert drivers'}</Text>
+          <Text style={styles.emergencySubText}>{sent ? `${notified} drivers notified` : 'Tap to alert drivers'}</Text>
         </TouchableOpacity>
       </Animated.View>
+
+      {sent && (
+        <View style={styles.notifBadge}>
+          <Text style={styles.notifText}>🚨 SOS sent to admin + {notified} nearby driver{notified !== 1 ? 's' : ''} within 5km</Text>
+        </View>
+      )}
 
       <View style={styles.infoCard}>
         <Text style={styles.infoTitle}>Your Info</Text>
@@ -95,9 +103,14 @@ const styles = StyleSheet.create({
   emergencyIcon: { fontSize: 48 },
   emergencyText: { color: '#fff', fontWeight: 'bold', fontSize: 18, marginTop: 4 },
   emergencySubText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
+  notifBadge: {
+    backgroundColor: 'rgba(231,76,60,0.15)', borderWidth: 1, borderColor: '#e74c3c',
+    borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, marginTop: 20,
+  },
+  notifText: { color: '#e74c3c', fontSize: 13, fontWeight: 'bold', textAlign: 'center' },
   infoCard: {
     backgroundColor: '#16213e', borderRadius: 12, padding: 16,
-    width: '100%', marginTop: 32, borderWidth: 1, borderColor: '#0f3460',
+    width: '100%', marginTop: 20, borderWidth: 1, borderColor: '#0f3460',
   },
   infoTitle: { color: '#f5a623', fontWeight: 'bold', marginBottom: 8 },
   infoText: { color: '#ddd', fontSize: 14, marginBottom: 4 },

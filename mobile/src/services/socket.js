@@ -4,8 +4,11 @@ const SOCKET_URL = 'http://10.116.252.46:5000';
 
 let socket = null;
 
-export const connectSocket = () => {
-  if (socket?.connected) return socket;
+export const connectSocket = (driverId) => {
+  if (socket?.connected) {
+    if (driverId) socket.emit('register_driver', driverId);
+    return socket;
+  }
 
   socket = io(SOCKET_URL, {
     transports: ['websocket'],
@@ -14,7 +17,10 @@ export const connectSocket = () => {
     reconnectionDelay: 2000,
   });
 
-  socket.on('connect', () => console.log('Socket connected'));
+  socket.on('connect', () => {
+    console.log('Socket connected');
+    if (driverId) socket.emit('register_driver', driverId);
+  });
   socket.on('disconnect', (reason) => console.log('Socket disconnected:', reason));
   socket.on('connect_error', (err) => console.log('Socket error:', err.message));
 

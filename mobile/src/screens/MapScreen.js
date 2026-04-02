@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Alert, Linking } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { getNearbyReports, updateLocation } from '../services/api';
@@ -51,7 +51,7 @@ export default function MapScreen({ navigation }) {
       );
     })();
 
-    const socket = connectSocket();
+    const socket = connectSocket(driver._id);
 
     const handleAlert = (report) => {
       setReports((prev) => prev.find((r) => r._id === report._id) ? prev : [report, ...prev]);
@@ -63,13 +63,26 @@ export default function MapScreen({ navigation }) {
       Alert.alert('🚨 EMERGENCY', `${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}`, [{ text: 'OK' }]);
     };
 
+    const handleSosNearby = (data) => {
+      Alert.alert(
+        '🆘 SOS NEARBY!',
+        `${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}\n\nTap "Map" to view location.`,
+        [
+          { text: 'Dismiss', style: 'cancel' },
+          { text: '🗺️ Map', onPress: () => Linking.openURL(`https://www.google.com/maps?q=${data.lat},${data.lng}`) },
+        ]
+      );
+    };
+
     socket.on('alert_nearby', handleAlert);
     socket.on('emergency_alert', handleEmergency);
+    socket.on('sos_nearby', handleSosNearby);
 
     return () => {
       watcher?.remove();
       socket.off('alert_nearby', handleAlert);
       socket.off('emergency_alert', handleEmergency);
+      socket.off('sos_nearby', handleSosNearby);
     };
   }, [driver._id, fetchReports]);
 

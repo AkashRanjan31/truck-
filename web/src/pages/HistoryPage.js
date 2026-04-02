@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getDriverReports, getAllReports, upvoteReport } from '../services/api';
+import { getDriverReports, getAllReports, upvoteReport, userConfirmResolution } from '../services/api';
 import { useDriver } from '../context/DriverContext';
 import './HistoryPage.css';
 
@@ -8,12 +8,20 @@ const ISSUE_ICONS = {
   accident_zone: '💥', poor_road: '🚧', other: '⚠️',
 };
 
+function StatusBadge({ report }) {
+  if (report.userConfirmed) return <span className="rc-status user-confirmed">✅ Confirmed by You</span>;
+  if (report.status === 'resolved' && report.resolvedBy === 'admin') return <span className="rc-status resolved-admin">✅ Resolved (Admin)</span>;
+  if (report.status === 'resolved') return <span className="rc-status resolved">Resolved</span>;
+  return <span className="rc-status active">Active</span>;
+}
+
 export default function HistoryPage() {
   const { driver } = useDriver();
   const [tab, setTab] = useState('mine');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [confirming, setConfirming] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -33,6 +41,20 @@ export default function HistoryPage() {
     } catch {}
   };
 
+  const handleUserConfirm = async (id, e) => {
+    e.stopPropagation();
+    if (!window.confirm('Confirm that this issue has been resolved?')) return;
+    setConfirming(id);
+    try {
+      const { data } = await userConfirmResolution(id);
+      setReports((prev) => prev.map((r) => r._id === id ? data : r));
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setConfirming(null);
+    }
+  };
+
   return (
     <div className="history-page">
       <div className="history-tabs">
@@ -50,6 +72,8 @@ export default function HistoryPage() {
           {reports.map((r) => {
             const isExpanded = expanded === r._id;
             const isOwner = String(r.driverId) === driver._id || r.driverId?._id === driver._id;
+            const canConfirm = isOwner && !r.userConfirmed;
+
             return (
               <div key={r._id} className="report-card" onClick={() => setExpanded(isExpanded ? null : r._id)}>
                 <div className="rc-header">
@@ -62,7 +86,7 @@ export default function HistoryPage() {
                         onClick={(e) => e.stopPropagation()}>📞 {r.driverPhone}</a>
                     )}
                   </div>
-                  <span className={`rc-status ${r.status}`}>{r.status}</span>
+                  <StatusBadge report={r} />
                 </div>
 
                 <p className={`rc-desc ${isExpanded ? 'expanded' : ''}`}>{r.description}</p>
@@ -76,9 +100,7 @@ export default function HistoryPage() {
                   📍 {r.address || `${r.location?.coordinates?.[1]?.toFixed(4)}, ${r.location?.coordinates?.[0]?.toFixed(4)}`}
                 </p>
 
-                {isExpanded && r.photo && (
-                  <img src={r.photo} alt="report" className="rc-photo" />
-                )}
+                {isExpanded && r.photo && <img src={r.photo} alt="report" className="rc-photo" />}
                 {isExpanded && r.resolvedPhoto && (
                   <div>
                     <p style={{ color: '#2ecc71', fontSize: 12, margin: '8px 0 4px' }}>✅ Resolution Photo</p>
@@ -86,8 +108,26 @@ export default function HistoryPage() {
                   </div>
                 )}
 
+                {/* User confirmation info */}
+                {isExpanded && r.userConfirmed && r.userConfirmedAt && (
+                  <div className="confirm-info">
+                    ✅ You confirmed this resolved on {new Date(r.userConfirmedAt).toLocaleString()}
+                  </div>
+                )}
+
                 <div className="rc-actions" onClick={(e) => e.stopPropagation()}>
                   <button className="upvote-btn" onClick={() => handleUpvote(r._id)}>👍 {r.upvotes}</button>
+
+                  {canConfirm && (
+                    <button
+                      className="confirm-btn"
+                      onClick={(e) => handleUserConfirm(r._id, e)}
+                      disabled={confirming === r._id}
+                    >
+                      {confirming === r._id ? 'Confirming...' : '✅ Issue Resolved?'}
+                    </button>
+                  )}
+
                   <span className="expand-hint">{isExpanded ? '▲ Less' : '▼ More'}</span>
                 </div>
               </div>
