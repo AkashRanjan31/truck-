@@ -1,0 +1,228 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Truck Alert - Admin Setup",
+  "collectionId": "truck-alert-admin-001",
+  "dateExported": "2024-01-01",
+  "version": "1.2",
+  "folders": [
+    { "id": "f1", "name": "Auth", "containerId": "" },
+    { "id": "f2", "name": "States", "containerId": "" },
+    { "id": "f3", "name": "State Admins", "containerId": "" },
+    { "id": "f4", "name": "Assign Admins", "containerId": "" },
+    { "id": "f5", "name": "Trucks", "containerId": "" },
+    { "id": "f6", "name": "Dashboard", "containerId": "" }
+  ],
+  "requests": [
+    {
+      "id": "r01", "colId": "truck-alert-admin-001", "containerId": "f1",
+      "name": "1. Super Admin Login", "url": "http://localhost:5000/api/auth/admin/login",
+      "method": "POST", "sortNum": 1,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "type": "json", "raw": "{\n  \"email\": \"akash@truck.com\",\n  \"password\": \"yourpassword\"\n}" }
+    },
+    {
+      "id": "r02", "colId": "truck-alert-admin-001", "containerId": "f1",
+      "name": "2. Get My Profile", "url": "http://localhost:5000/api/auth/me",
+      "method": "GET", "sortNum": 2,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r03", "colId": "truck-alert-admin-001", "containerId": "f1",
+      "name": "3. Odisha Admin Login", "url": "http://localhost:5000/api/auth/admin/login",
+      "method": "POST", "sortNum": 3,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "type": "json", "raw": "{\n  \"email\": \"odisha@truck.com\",\n  \"password\": \"odisha123\"\n}" }
+    },
+    {
+      "id": "r04", "colId": "truck-alert-admin-001", "containerId": "f1",
+      "name": "4. Jharkhand Admin Login", "url": "http://localhost:5000/api/auth/admin/login",
+      "method": "POST", "sortNum": 4,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "type": "json", "raw": "{\n  \"email\": \"jharkhand@truck.com\",\n  \"password\": \"jharkhand123\"\n}" }
+    },
+    {
+      "id": "r05", "colId": "truck-alert-admin-001", "containerId": "f1",
+      "name": "5. Bihar Admin Login", "url": "http://localhost:5000/api/auth/admin/login",
+      "method": "POST", "sortNum": 5,
+      "headers": [{ "name": "Content-Type", "value": "application/json" }],
+      "body": { "type": "json", "raw": "{\n  \"email\": \"bihar@truck.com\",\n  \"password\": \"bihar123\"\n}" }
+    },
+    {
+      "id": "r06", "colId": "truck-alert-admin-001", "containerId": "f2",
+      "name": "Get All States", "url": "http://localhost:5000/api/states",
+      "method": "GET", "sortNum": 6,
+      "headers": [],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r07", "colId": "truck-alert-admin-001", "containerId": "f2",
+      "name": "Update State - Odisha (add boundary)", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610c5",
+      "method": "PATCH", "sortNum": 7,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"name\": \"Odisha\",\n  \"code\": \"OD\"\n}" }
+    },
+    {
+      "id": "r08", "colId": "truck-alert-admin-001", "containerId": "f3",
+      "name": "Get All State Admins", "url": "http://localhost:5000/api/admin/state-admins",
+      "method": "GET", "sortNum": 8,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r09", "colId": "truck-alert-admin-001", "containerId": "f3",
+      "name": "Update Odisha Admin", "url": "http://localhost:5000/api/admin/state-admins/69ce500f2a27585a53e610d5",
+      "method": "PATCH", "sortNum": 9,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"name\": \"Odisha Admin\",\n  \"email\": \"odisha@truck.com\",\n  \"password\": \"odisha123\"\n}" }
+    },
+    {
+      "id": "r10", "colId": "truck-alert-admin-001", "containerId": "f3",
+      "name": "Delete State Admin (replace id)", "url": "http://localhost:5000/api/admin/state-admins/PASTE_ADMIN_ID",
+      "method": "DELETE", "sortNum": 10,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r11", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Odisha", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610c5/assign-admin",
+      "method": "POST", "sortNum": 11,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce500f2a27585a53e610d5\"\n}" }
+    },
+    {
+      "id": "r12", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Jharkhand", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610c7/assign-admin",
+      "method": "POST", "sortNum": 12,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce500f2a27585a53e610d8\"\n}" }
+    },
+    {
+      "id": "r13", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Bihar", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610c9/assign-admin",
+      "method": "POST", "sortNum": 13,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce500f2a27585a53e610db\"\n}" }
+    },
+    {
+      "id": "r14", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - West Bengal", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610cb/assign-admin",
+      "method": "POST", "sortNum": 14,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce50102a27585a53e610de\"\n}" }
+    },
+    {
+      "id": "r15", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Chhattisgarh", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610cd/assign-admin",
+      "method": "POST", "sortNum": 15,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce50102a27585a53e610e1\"\n}" }
+    },
+    {
+      "id": "r16", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Andhra Pradesh", "url": "http://localhost:5000/api/states/69ce500e2a27585a53e610cf/assign-admin",
+      "method": "POST", "sortNum": 16,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce50102a27585a53e610e4\"\n}" }
+    },
+    {
+      "id": "r17", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Maharashtra", "url": "http://localhost:5000/api/states/69ce500f2a27585a53e610d1/assign-admin",
+      "method": "POST", "sortNum": 17,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce50102a27585a53e610e7\"\n}" }
+    },
+    {
+      "id": "r18", "colId": "truck-alert-admin-001", "containerId": "f4",
+      "name": "Assign Admin - Uttar Pradesh", "url": "http://localhost:5000/api/states/69ce500f2a27585a53e610d3/assign-admin",
+      "method": "POST", "sortNum": 18,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"adminId\": \"69ce50112a27585a53e610ea\"\n}" }
+    },
+    {
+      "id": "r19", "colId": "truck-alert-admin-001", "containerId": "f5",
+      "name": "Create Truck - Odisha", "url": "http://localhost:5000/api/trucks",
+      "method": "POST", "sortNum": 19,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"truckNumber\": \"OD12AB1234\",\n  \"homeStateId\": \"69ce500e2a27585a53e610c5\"\n}" }
+    },
+    {
+      "id": "r20", "colId": "truck-alert-admin-001", "containerId": "f5",
+      "name": "Create Truck - Jharkhand", "url": "http://localhost:5000/api/trucks",
+      "method": "POST", "sortNum": 20,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }
+      ],
+      "body": { "type": "json", "raw": "{\n  \"truckNumber\": \"JH05CD5678\",\n  \"homeStateId\": \"69ce500e2a27585a53e610c7\"\n}" }
+    },
+    {
+      "id": "r21", "colId": "truck-alert-admin-001", "containerId": "f5",
+      "name": "Get All Trucks", "url": "http://localhost:5000/api/trucks",
+      "method": "GET", "sortNum": 21,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r22", "colId": "truck-alert-admin-001", "containerId": "f6",
+      "name": "Super Admin Dashboard", "url": "http://localhost:5000/api/admin/dashboard",
+      "method": "GET", "sortNum": 22,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r23", "colId": "truck-alert-admin-001", "containerId": "f6",
+      "name": "Get All Drivers", "url": "http://localhost:5000/api/admin/drivers",
+      "method": "GET", "sortNum": 23,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r24", "colId": "truck-alert-admin-001", "containerId": "f6",
+      "name": "Get All Reports", "url": "http://localhost:5000/api/reports",
+      "method": "GET", "sortNum": 24,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    },
+    {
+      "id": "r25", "colId": "truck-alert-admin-001", "containerId": "f6",
+      "name": "Get All Trips", "url": "http://localhost:5000/api/trips",
+      "method": "GET", "sortNum": 25,
+      "headers": [{ "name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5Y2U0ODA3MjM4Zjk2YTFiYWQxNDFiOCIsInJvbGUiOiJzdXBlcl9hZG1pbiIsImlhdCI6MTc3NTEyNjU2MCwiZXhwIjoxNzc3NzE4NTYwfQ.pknAxNTYYY8eGudgQ_dEBW23k91Ha7LmHhQ2N-GX_QA" }],
+      "body": { "type": "none" }
+    }
+  ]
+}
