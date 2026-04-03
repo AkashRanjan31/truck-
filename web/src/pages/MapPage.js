@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { getNearbyReports, getTrafficZones } from '../services/api';
+import { getNearbyReports, getTrafficZones, updateLocation } from '../services/api';
 import { connectSocket } from '../services/socket';
 import { useNavigate } from 'react-router-dom';
 import { useDriver } from '../context/DriverContext';
 import LocationMapModal from '../components/LocationMapModal';
+import SosAlertPopup from '../components/SosAlertPopup';
 import './MapPage.css';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -80,15 +81,32 @@ export default function MapPage() {
   }, [fetchReports, fetchZones]);
 
   useEffect(() => {
+    if (!driver?._id) return;
+    let watchId = null;
+
     navigator.geolocation?.getCurrentPosition(
       (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         setUserPos([lat, lng]);
         refreshAll(lat, lng);
+        // Update driver location in DB so SOS nearby detection works
+        updateLocation(driver._id, lat, lng).catch(() => {});
         // Auto-refresh zones every 60s
         refreshTimer.current = setInterval(() => refreshAll(lat, lng), 60000);
       },
-      () => refreshAll(20.5937, 78.9629)
+      () => refreshAll(20.5937, 78.9629),
+      { timeout: 10000, maximumAge: 60000 }
+    );
+
+    // Watch position and keep DB updated for SOS detection
+    watchId = navigator.geolocation?.watchPosition(
+      (pos) => {
+        const { latitude: lat, longitude: lng } = pos.coords;
+        setUserPos([lat, lng]);
+        updateLocation(driver._id, lat, lng).catch(() => {});
+      },
+      () => {},
+      { timeout: 15000, maximumAge: 30000, enableHighAccuracy: false }
     );
 
     const socket = connectSocket(driver?._id);
@@ -97,32 +115,29 @@ export default function MapPage() {
       setReports((prev) => prev.find((r) => r._id === report._id) ? prev : [report, ...prev]);
       setAlert(report);
       setTimeout(() => setAlert(null), 5000);
+      // Also refresh zones when new report arrives
+      setUserPos((pos) => { if (pos) fetchZones(pos[0], pos[1]); return pos; });
     };
     const handleEmergency = (data) => {
-      window.alert(`🚨 EMERGENCY!\n${data.driverName} (${data.truckNumber}) needs help!\n📍 ${data.address}`);
+      // Admin-level emergency — show as banner for drivers too
+      setSosAlert(data);
     };
     const handleSosNearby = (data) => {
       setSosAlert(data);
-      setTimeout(() => setSosAlert(null), 15000);
-    };
-    // Refresh zones when a new report comes in
-    const handleNewReport = () => {
-      if (userPos) fetchZones(userPos[0], userPos[1]);
     };
 
     socket.on('alert_nearby', handleAlert);
     socket.on('emergency_alert', handleEmergency);
     socket.on('sos_nearby', handleSosNearby);
-    socket.on('alert_nearby', handleNewReport);
 
     return () => {
       clearInterval(refreshTimer.current);
+      if (watchId) navigator.geolocation?.clearWatch(watchId);
       socket.off('alert_nearby', handleAlert);
       socket.off('emergency_alert', handleEmergency);
       socket.off('sos_nearby', handleSosNearby);
-      socket.off('alert_nearby', handleNewReport);
     };
-  }, [driver?._id, fetchZones, refreshAll, userPos]);
+  }, [driver?._id, fetchZones, refreshAll]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const heavyCount = zones.filter((z) => z.level === 'Heavy').length;
   const moderateCount = zones.filter((z) => z.level === 'Moderate').length;
@@ -130,17 +145,13 @@ export default function MapPage() {
 
   return (
     <div className="map-wrapper">
+      {/* SOS Alert Popup — full screen with alarm, map pin, acknowledge */}
       {sosAlert && (
-        <div className="alert-banner sos-banner">
-          <span>🆘</span>
-          <div>
-            <strong>🚨 SOS NEARBY — {sosAlert.driverName} ({sosAlert.truckNumber})</strong>
-            <p>📍 {sosAlert.address} · 📞 {sosAlert.phone}</p>
-          </div>
-          <a href={`https://www.google.com/maps?q=${sosAlert.lat},${sosAlert.lng}`}
-            target="_blank" rel="noreferrer" className="sos-map-link">🗺️ Map</a>
-          <button className="sos-dismiss" onClick={() => setSosAlert(null)}>✕</button>
-        </div>
+        <SosAlertPopup
+          sos={sosAlert}
+          driver={driver}
+          onDismiss={() => setSosAlert(null)}
+        />
       )}
       {alert && (
         <div className="alert-banner">

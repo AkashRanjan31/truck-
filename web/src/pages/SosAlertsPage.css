@@ -1,0 +1,195 @@
+.sp-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+}
+
+.sp-list {
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 24px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sp-list-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.sp-list-title {
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  flex: 1;
+  letter-spacing: -0.3px;
+}
+.sp-count {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.sp-refresh {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.18s;
+}
+.sp-refresh:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+.sp-loading { padding: 60px; display: flex; justify-content: center; }
+.sp-empty { text-align: center; padding: 80px 20px; }
+.sp-empty p { color: var(--success); font-size: 18px; margin-bottom: 8px; }
+.sp-empty small { color: var(--muted); font-size: 13px; }
+
+/* ── Card ── */
+.sp-card {
+  background: var(--glass2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.sp-card:hover {
+  border-color: rgba(239,68,68,0.35);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.sp-card-selected {
+  border-color: rgba(239,68,68,0.5);
+  background: rgba(239,68,68,0.04);
+}
+.sp-card-resolved { opacity: 0.55; }
+
+.sp-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.sp-card-icon { font-size: 24px; flex-shrink: 0; }
+.sp-card-info { flex: 1; min-width: 0; }
+.sp-card-info strong { display: block; color: var(--text); font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.sp-card-info span { color: var(--muted); font-size: 12px; }
+
+.sp-card-meta {
+  display: flex; gap: 16px; flex-wrap: wrap;
+  color: var(--muted); font-size: 11px; margin-bottom: 8px;
+}
+.sp-ref { color: var(--accent); font-weight: 700; }
+
+/* ── Status badges ── */
+.sp-badge {
+  font-size: 10px; font-weight: 700;
+  padding: 4px 10px; border-radius: 20px; white-space: nowrap;
+}
+.sp-active {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+  border: 1px solid rgba(239,68,68,0.25);
+}
+.sp-responded {
+  background: rgba(34,197,94,0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34,197,94,0.25);
+}
+.sp-resolved {
+  background: rgba(59,130,246,0.12);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.25);
+}
+
+/* ── Actions ── */
+.sp-card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+.sp-btn-view {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border2);
+  color: var(--text2);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  transition: all 0.18s;
+}
+.sp-btn-view:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+.sp-btn-ack {
+  background: rgba(34,197,94,0.1);
+  border: 1px solid rgba(34,197,94,0.3);
+  color: #4ade80;
+  border-radius: 8px; padding: 6px 12px; font-size: 12px; cursor: pointer;
+  transition: all 0.18s;
+}
+.sp-btn-ack:hover { background: rgba(34,197,94,0.2); }
+.sp-btn-ack:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.sp-btn-nav {
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 8px; padding: 6px 12px; font-size: 12px;
+  font-weight: 700; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.sp-btn-nav:hover { opacity: 0.85; }
+
+/* ── Inline map ── */
+.sp-inline-map {
+  height: 280px;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid var(--border);
+}
+
+/* ── Responded list ── */
+.sp-acked-list {
+  margin-top: 12px;
+  background: rgba(34,197,94,0.05);
+  border: 1px solid rgba(34,197,94,0.2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sp-acked-title { color: #4ade80; font-size: 11px; font-weight: 700; margin: 0 0 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+.sp-acked-chip {
+  background: rgba(34,197,94,0.08);
+  color: var(--text2);
+  font-size: 12px;
+  border-radius: 6px;
+  padding: 5px 10px;
+  border: 1px solid rgba(34,197,94,0.15);
+}
+
+/* ── SOS map pin ── */
+.sp-pin-wrapper {
+  position: relative; width: 48px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+}
+.sp-pin-pulse {
+  position: absolute; width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(239,68,68,0.3);
+  animation: spPulse 1.6s ease-out infinite;
+}
+.sp-pin-marker {
+  position: relative; z-index: 1; width: 38px; height: 38px;
+  background: var(--bg2); border: 3px solid var(--danger);
+  border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; box-shadow: 0 4px 12px rgba(239,68,68,0.5);
+}
+.sp-pin-marker > * { transform: rotate(45deg); }
+@keyframes spPulse {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}

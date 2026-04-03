@@ -36,7 +36,9 @@ export default function ProfilePage() {
   return (
     <div className="profile-page">
       <div className="profile-card">
-        <div className="profile-avatar">🚛</div>
+        <div className="profile-avatar-wrap">
+          <div className="profile-avatar">🚛</div>
+        </div>
         <h2 className="profile-name">{driver?.name}</h2>
         <p className="profile-truck">{driver?.truckNumber}</p>
 

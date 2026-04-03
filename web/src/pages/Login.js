@@ -39,7 +39,29 @@ export default function Login() {
 
   return (
     <div className="login-bg">
-      <div className="login-card">
+      {/* Left hero */}
+      <div className="login-hero">
+        <div className="login-hero-img" />
+        <div className="login-hero-overlay" />
+        <div className="login-hero-content">
+          <div className="login-hero-badge">🛡️ Live Safety Network</div>
+          <h1 className="login-hero-title">
+            Drive Safe.<br /><span>Stay Connected.</span>
+          </h1>
+          <p className="login-hero-tagline">
+            Real-time driver safety network — report hazards, receive instant alerts, and get help when it matters most.
+          </p>
+          <div className="login-hero-stats">
+            <div className="lhs-item"><span className="lhs-num">5km</span><span className="lhs-label">Alert Radius</span></div>
+            <div className="lhs-item"><span className="lhs-num">Live</span><span className="lhs-label">SOS Alerts</span></div>
+            <div className="lhs-item"><span className="lhs-num">6</span><span className="lhs-label">Issue Types</span></div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right form */}
+      <div className="login-right">
+        <div className="login-card">
         <div className="login-logo">🚛</div>
         <h1 className="login-title">Truck Alert</h1>
         <p className="login-sub">Driver Safety Network</p>
@@ -78,6 +100,7 @@ export default function Login() {
             </div>
           </form>
         )}
+        </div>
       </div>
     </div>
   );

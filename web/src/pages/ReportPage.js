@@ -41,7 +41,7 @@ export default function ReportPage() {
 
     try {
       const pos = await new Promise((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej)
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 10000, maximumAge: 60000 })
       );
 
       const formData = new FormData();

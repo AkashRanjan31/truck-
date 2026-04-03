@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { triggerSOS } from '../services/api';
+import { triggerSOS, updateLocation } from '../services/api';
 import { useDriver } from '../context/DriverContext';
 import './EmergencyPage.css';
 
@@ -7,6 +7,8 @@ export default function EmergencyPage() {
   const { driver } = useDriver();
   const [sent, setSent] = useState(false);
   const [notified, setNotified] = useState(0);
+  const [sosId, setSosId] = useState('');
+  const [sentTime, setSentTime] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const timerRef = useRef(null);
@@ -15,21 +17,32 @@ export default function EmergencyPage() {
     setError(''); setLoading(true);
     try {
       const pos = await new Promise((res, rej) =>
-        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000 })
+        navigator.geolocation.getCurrentPosition(res, rej, { timeout: 8000, enableHighAccuracy: true })
       );
+      const { latitude, longitude } = pos.coords;
+
+      // Update own location in DB first so it's current
+      await updateLocation(driver._id, latitude, longitude).catch(() => {});
+
       const { data } = await triggerSOS({
         driverId: driver._id,
         driverName: driver.name,
         truckNumber: driver.truckNumber,
         phone: driver.phone,
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        address: `${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`,
+        lat: latitude,
+        lng: longitude,
+        address: `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`,
       });
       setSent(true);
       setNotified(data.notified || 0);
+      setSosId(data.sosId || '');
+      setSentTime(new Date().toLocaleTimeString());
+      // Log debug info to console
+      if (data.debug) {
+        console.log('[SOS Debug]', JSON.stringify(data.debug, null, 2));
+      }
       clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => { setSent(false); setNotified(0); }, 10000);
+      timerRef.current = setTimeout(() => { setSent(false); setNotified(0); setSosId(''); setSentTime(null); }, 30000);
     } catch (err) {
       setError(err.message || 'Could not send SOS. Please enable location access.');
     } finally {
@@ -54,7 +67,9 @@ export default function EmergencyPage() {
 
       {sent && (
         <div className="sos-result">
-          🚨 SOS sent to admin + <strong>{notified}</strong> nearby driver{notified !== 1 ? 's' : ''} within 5km
+          <p>🚨 SOS sent to admin + <strong>{notified}</strong> nearby driver{notified !== 1 ? 's' : ''} within 5km</p>
+          {sosId && <p className="sos-ref">🔖 Request ID: <strong>{sosId.slice(-8).toUpperCase()}</strong></p>}
+          {sentTime && <p className="sos-ref">🕐 Sent at: <strong>{sentTime}</strong></p>}
         </div>
       )}
 

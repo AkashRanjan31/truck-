@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { getAllReportsAdmin, getAllDrivers, resolveReportWithPhoto, deleteReport, deleteDriver, adminLogin, adminChangePassword } from '../services/api';
+import { getAllReportsAdmin, getAllDrivers, resolveReportWithPhoto, deleteReport, deleteDriver, adminLogin, adminChangePassword, getActiveSOS, resolveSOS } from '../services/api';
 import { connectSocket } from '../services/socket';
 import LocationMapModal from '../components/LocationMapModal';
 import './AdminPage.css';
@@ -12,7 +12,8 @@ const ISSUE_ICONS = {
 const ISSUE_TYPES = ['all', 'police_harassment', 'extortion', 'unsafe_parking', 'accident_zone', 'poor_road', 'other'];
 
 export default function AdminPage() {
-  const [authed, setAuthed] = useState(() => !!sessionStorage.getItem('adminPass'));
+  const [authChecked, setAuthChecked] = useState(false);
+  const [authed, setAuthed] = useState(false);
   const [pass, setPass] = useState('');
   const [passErr, setPassErr] = useState('');
   const [showChangePass, setShowChangePass] = useState(false);
@@ -42,12 +43,27 @@ export default function AdminPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [rRes, dRes] = await Promise.all([getAllReportsAdmin(), getAllDrivers()]);
+      const [rRes, dRes, sosRes] = await Promise.all([getAllReportsAdmin(), getAllDrivers(), getActiveSOS()]);
       setReports(rRes.data);
       setDrivers(dRes.data);
+      setSosList(sosRes.data.map((s) => ({ ...s, _feedTime: new Date(s.timestamp) })));
     } catch {}
     setLoading(false);
   }, []);
+
+  // Restore auth from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('adminPass');
+    if (saved) {
+      // Verify the saved password is still valid
+      adminLogin(saved)
+        .then(() => setAuthed(true))
+        .catch(() => { localStorage.removeItem('adminPass'); })
+        .finally(() => setAuthChecked(true));
+    } else {
+      setAuthChecked(true);
+    }
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     if (!authed) return;
@@ -61,19 +77,32 @@ export default function AdminPage() {
       const item = { ...d, type: '__emergency__', _feedTime: new Date() };
       setFeed((prev) => [item, ...prev].slice(0, 20));
       setSosList((prev) => [item, ...prev]);
-      // Play alert sound
       try { new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play(); } catch {}
+    };
+    const handleSosAck = ({ sosId, driverId, driverName, truckNumber, acknowledgedAt }) => {
+      setSosList((prev) => prev.map((s) => s.sosId === sosId
+        ? { ...s, acknowledgedBy: [...(s.acknowledgedBy || []), { driverId, driverName, truckNumber, acknowledgedAt }] }
+        : s
+      ));
+    };
+    const handleSosResolved = ({ sosId, resolvedAt }) => {
+      setSosList((prev) => prev.map((s) => s.sosId === sosId ? { ...s, status: 'resolved', resolvedAt } : s));
+    };
+    const handleUserConfirmed = (r) => {
+      setReports((prev) => prev.map((x) => x._id === r._id ? r : x));
+      if (selectedReportRef.current?._id === r._id) setSelectedReportSafe(r);
     };
     socket.on('alert_nearby', handleAlert);
     socket.on('emergency_alert', handleEmergency);
-    socket.on('report_user_confirmed', (r) => {
-      setReports((prev) => prev.map((x) => x._id === r._id ? r : x));
-      if (selectedReportRef.current?._id === r._id) setSelectedReportSafe(r);
-    });
+    socket.on('sos_acknowledged', handleSosAck);
+    socket.on('sos_resolved', handleSosResolved);
+    socket.on('report_user_confirmed', handleUserConfirmed);
     return () => {
       socket.off('alert_nearby', handleAlert);
       socket.off('emergency_alert', handleEmergency);
-      socket.off('report_user_confirmed');
+      socket.off('sos_acknowledged', handleSosAck);
+      socket.off('sos_resolved', handleSosResolved);
+      socket.off('report_user_confirmed', handleUserConfirmed);
     };
   }, [authed, loadData]);
 
@@ -81,7 +110,7 @@ export default function AdminPage() {
     e.preventDefault();
     try {
       await adminLogin(pass);
-      sessionStorage.setItem('adminPass', pass);
+      localStorage.setItem('adminPass', pass);
       setAuthed(true);
     } catch (err) { setPassErr(err.message); }
   };
@@ -92,7 +121,7 @@ export default function AdminPage() {
     if (changeForm.next !== changeForm.confirm) return setChangeErr('New passwords do not match');
     try {
       await adminChangePassword(changeForm.current, changeForm.next);
-      sessionStorage.setItem('adminPass', changeForm.next);
+      localStorage.setItem('adminPass', changeForm.next);
       setChangeOk(true);
       setChangeForm({ current: '', next: '', confirm: '' });
       setTimeout(() => { setShowChangePass(false); setChangeOk(false); }, 1500);
@@ -155,6 +184,14 @@ export default function AdminPage() {
     a.download = 'reports.csv';
     a.click();
   };
+
+  if (!authChecked) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#1a1a2e' }}>
+        <div className="spinner" />
+      </div>
+    );
+  }
 
   if (!authed) {
     return (
@@ -227,7 +264,7 @@ export default function AdminPage() {
         <button className="admin-logout" onClick={() => setShowChangePass(true)} style={{ marginBottom: 8 }}>
           🔑 Change Password
         </button>
-        <button className="admin-logout" onClick={() => { sessionStorage.removeItem('adminPass'); setAuthed(false); }}>
+        <button className="admin-logout" onClick={() => { localStorage.removeItem('adminPass'); setAuthed(false); }}>
           🚪 Logout
         </button>
       </aside>
@@ -410,29 +447,54 @@ export default function AdminPage() {
               <div className="sos-list">
                 {sosList.length === 0 && <p className="empty-row">No SOS alerts yet. Waiting...</p>}
                 {sosList.map((item, i) => (
-                  <div key={i} className="sos-card">
+                  <div key={item.sosId || i} className={`sos-card ${item.status === 'resolved' ? 'sos-card-resolved' : ''}`}>
                     <div className="sos-card-header">
                       <span className="sos-card-icon">🚨</span>
                       <div className="sos-card-info">
                         <strong>{item.driverName} ({item.truckNumber})</strong>
                         <span>📞 {item.phone}</span>
                       </div>
-                      <span className="sos-card-time">{new Date(item._feedTime).toLocaleTimeString()}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                        <span className="sos-card-time">{new Date(item._feedTime || item.timestamp).toLocaleTimeString()}</span>
+                        {item.status === 'resolved'
+                          ? <span className="status-badge resolved-admin" style={{ fontSize: 10 }}>✅ Resolved</span>
+                          : <span className="status-badge active" style={{ fontSize: 10 }}>🔴 Active</span>}
+                      </div>
                     </div>
                     <div className="sos-card-body">
                       <p>📍 {item.address}</p>
-                      {item.nearbyCount !== undefined && (
-                        <p>👥 {item.nearbyCount} nearby driver{item.nearbyCount !== 1 ? 's' : ''} notified</p>
-                      )}
+                      <p>🕐 {new Date(item.timestamp || item._feedTime).toLocaleString()}</p>
+                      {item.sosId && <p style={{ color: '#f5a623', fontSize: 12 }}>🔖 ID: {item.sosId.slice(-8).toUpperCase()}</p>}
+                      <p>👥 {item.nearbyCount || 0} drivers notified · ✅ {item.acknowledgedBy?.length || 0} responded</p>
                     </div>
+
+                    {/* Responded drivers */}
+                    {item.acknowledgedBy?.length > 0 && (
+                      <div className="sos-acked-block">
+                        <p className="sos-acked-title">✅ Drivers who responded:</p>
+                        {item.acknowledgedBy.map((a, j) => (
+                          <span key={j} className="sos-acked-chip">
+                            {a.driverName} ({a.truckNumber}) · {new Date(a.acknowledgedAt).toLocaleTimeString()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="sos-card-actions">
                       <a href={`https://www.google.com/maps?q=${item.lat},${item.lng}`}
                         target="_blank" rel="noreferrer" className="sos-map-btn">
                         🗺️ View on Map
                       </a>
-                      <a href={`tel:${item.phone}`} className="sos-call-btn">
-                        📞 Call Driver
+                      <a href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`}
+                        target="_blank" rel="noreferrer" className="sos-map-btn" style={{ background: 'rgba(245,166,35,0.15)', borderColor: '#f5a623', color: '#f5a623' }}>
+                        🧭 Navigate
                       </a>
+                      <a href={`tel:${item.phone}`} className="sos-call-btn">📞 Call Driver</a>
+                      {item.status !== 'resolved' && item.sosId && (
+                        <button className="sos-resolve-btn" onClick={async () => {
+                          try { await resolveSOS(item.sosId); setSosList((prev) => prev.map((s) => s.sosId === item.sosId ? { ...s, status: 'resolved', resolvedAt: new Date().toISOString() } : s)); } catch {}
+                        }}>✅ Mark Resolved</button>
+                      )}
                     </div>
                   </div>
                 ))}

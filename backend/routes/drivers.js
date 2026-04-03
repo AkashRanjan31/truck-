@@ -50,7 +50,11 @@ router.patch('/:id/location', async (req, res) => {
 
     const driver = await Driver.findByIdAndUpdate(
       req.params.id,
-      { location: { type: 'Point', coordinates: [parsedLng, parsedLat] } },
+      {
+        location: { type: 'Point', coordinates: [parsedLng, parsedLat] },
+        locationSet: true,
+        lastLocationUpdate: new Date(),
+      },
       { new: true }
     );
     if (!driver) return res.status(404).json({ error: 'Driver not found' });

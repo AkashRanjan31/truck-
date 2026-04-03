@@ -1,35 +1,98 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #1a1a2e;
-  color: #fff;
-  min-height: 100vh;
-}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  --bg: #1a1a2e;
-  --card: #16213e;
-  --border: #0f3460;
-  --accent: #f5a623;
-  --danger: #e74c3c;
-  --success: #2ecc71;
-  --muted: #888;
+  --bg:        #020617;
+  --bg2:       #0f172a;
+  --bg3:       #1e293b;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --accent:    #f59e0b;
+  --accent2:   #fbbf24;
+  --danger:    #ef4444;
+  --danger2:   #dc2626;
+  --success:   #22c55e;
+  --success2:  #16a34a;
+  --info:      #3b82f6;
+  --muted:     #94a3b8;
+  --text:      #f1f5f9;
+  --text2:     #cbd5e1;
+  --glass:     rgba(15,23,42,0.7);
+  --glass2:    rgba(30,41,59,0.6);
+  --sidebar-w: 220px;
+  --nav-h:     60px;
+  --radius:    14px;
+  --radius-sm: 8px;
+  --shadow:    0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
+  --glow-accent: 0 0 20px rgba(245,158,11,0.25);
+  --glow-danger: 0 0 30px rgba(239,68,68,0.4);
 }
 
-button { cursor: pointer; border: none; outline: none; }
-input, textarea, select { outline: none; }
+html, body, #root { height: 100%; }
 
+body {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; border: none; outline: none; font-family: inherit; }
+input, textarea, select { outline: none; font-family: inherit; }
+a { text-decoration: none; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+/* ── Spinner ── */
 .spinner {
-  width: 40px; height: 40px;
-  border: 4px solid #0f3460;
-  border-top-color: #f5a623;
+  width: 36px; height: 36px;
+  border: 3px solid var(--bg3);
+  border-top-color: var(--accent);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: spin 0.75s linear infinite;
   margin: auto;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Glass card utility ── */
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ── App shell: sidebar + content ── */
+.app-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  margin-left: var(--sidebar-w);
+}
+
+.page-body {
+  flex: 1;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  :root { --sidebar-w: 0px; }
+  .app-content { margin-left: 0; }
+}

@@ -1,0 +1,166 @@
+.sos-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(6px);
+  animation: sosOverlayIn 0.3s ease;
+}
+@keyframes sosOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+.sos-popup {
+  background: var(--bg2);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 680px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: sosPopupIn 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+@keyframes sosPopupIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.sos-popup-active {
+  border: 2px solid var(--danger);
+  box-shadow: 0 0 60px rgba(239,68,68,0.5);
+}
+.sos-popup-acked {
+  border: 2px solid var(--success);
+  box-shadow: 0 0 40px rgba(34,197,94,0.35);
+}
+
+/* ── Header ── */
+.sos-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, var(--danger2), var(--danger));
+  animation: sosHeaderPulse 1s ease infinite alternate;
+}
+.sos-popup-acked .sos-popup-header {
+  background: linear-gradient(90deg, var(--success2), var(--success));
+  animation: none;
+}
+@keyframes sosHeaderPulse {
+  from { background: linear-gradient(90deg, var(--danger2), var(--danger)); }
+  to   { background: linear-gradient(90deg, #b91c1c, var(--danger2)); }
+}
+
+.sos-popup-icon { font-size: 30px; flex-shrink: 0; }
+.sos-popup-title-wrap { flex: 1; }
+.sos-popup-title { color: #fff; font-size: 17px; font-weight: 800; margin: 0; letter-spacing: -0.2px; }
+.sos-popup-subtitle { color: rgba(255,255,255,0.8); font-size: 12px; margin: 2px 0 0; }
+.sos-popup-close {
+  background: rgba(255,255,255,0.15);
+  color: #fff; border-radius: 8px;
+  padding: 6px 12px; font-size: 16px; cursor: pointer;
+  transition: background 0.2s;
+}
+.sos-popup-close:hover { background: rgba(255,255,255,0.3); }
+
+/* ── Info bar ── */
+.sos-popup-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 20px;
+  background: rgba(239,68,68,0.08);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text2);
+}
+.sos-id { color: var(--accent); font-weight: 700; margin-left: auto; }
+
+/* ── Map ── */
+.sos-popup-map { flex: 1; min-height: 300px; }
+
+/* ── SOS pin ── */
+.sos-pin-wrapper {
+  position: relative; width: 56px; height: 56px;
+  display: flex; align-items: center; justify-content: center;
+}
+.sos-pin-pulse {
+  position: absolute; width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(239,68,68,0.35);
+  animation: sosPinPulse 1.5s ease-out infinite;
+}
+.sos-pin-pulse2 { animation-delay: 0.75s; }
+.sos-pin-marker {
+  position: relative; z-index: 1;
+  width: 44px; height: 44px;
+  background: var(--bg2); border: 3px solid var(--danger);
+  border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 4px 16px rgba(239,68,68,0.6);
+}
+.sos-pin-marker > * { transform: rotate(45deg); }
+@keyframes sosPinPulse {
+  0%   { transform: scale(0.5); opacity: 1; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+/* ── Actions ── */
+.sos-popup-actions {
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.sos-ack-btn {
+  background: var(--danger); color: #fff;
+  border-radius: 8px; padding: 10px 18px;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  animation: sosAckPulse 1s ease infinite alternate;
+  transition: background 0.2s;
+}
+@keyframes sosAckPulse {
+  from { box-shadow: 0 0 0 rgba(239,68,68,0.4); }
+  to   { box-shadow: 0 0 16px rgba(239,68,68,0.8); }
+}
+.sos-ack-btn:hover { background: var(--danger2); }
+
+.sos-acked-label { color: var(--success); font-weight: 700; font-size: 14px; }
+
+.sos-nav-btn {
+  background: var(--accent); color: var(--bg);
+  border-radius: 8px; padding: 10px 16px;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.sos-nav-btn:hover { opacity: 0.85; }
+
+.sos-gmaps-btn {
+  background: var(--info); color: #fff;
+  border-radius: 8px; padding: 10px 16px;
+  font-size: 13px; font-weight: 700; text-decoration: none;
+  transition: opacity 0.2s;
+}
+.sos-gmaps-btn:hover { opacity: 0.85; }
+
+.sos-dismiss-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--muted); border-radius: 8px;
+  padding: 10px 16px; font-size: 13px; cursor: pointer;
+  margin-left: auto; transition: all 0.18s;
+}
+.sos-dismiss-btn:hover { color: var(--text); background: rgba(255,255,255,0.1); }
+
+@media (max-width: 600px) {
+  .sos-popup-map { min-height: 220px; }
+  .sos-ack-btn, .sos-nav-btn, .sos-gmaps-btn { font-size: 12px; padding: 8px 12px; }
+}

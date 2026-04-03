@@ -9,6 +9,8 @@ const driverSchema = new mongoose.Schema({
     type: { type: String, default: 'Point' },
     coordinates: { type: [Number], default: [0, 0] },
   },
+  locationSet: { type: Boolean, default: false },
+  lastLocationUpdate: { type: Date, default: null },
   password: { type: String, default: null },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
