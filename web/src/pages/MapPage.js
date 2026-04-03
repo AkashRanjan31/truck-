@@ -10,6 +10,60 @@ import LocationMapModal from '../components/LocationMapModal';
 import SosAlertPopup from '../components/SosAlertPopup';
 import './MapPage.css';
 
+const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+const SEARCH_RADIUS_M = 5000;
+
+// Haversine distance in km between two lat/lng points
+function distanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function fetchEmergencyServices(lat, lng) {
+  const query = `
+    [out:json][timeout:20];
+    (
+      node["amenity"="police"](around:${SEARCH_RADIUS_M},${lat},${lng});
+      way["amenity"="police"](around:${SEARCH_RADIUS_M},${lat},${lng});
+      node["amenity"="hospital"](around:${SEARCH_RADIUS_M},${lat},${lng});
+      way["amenity"="hospital"](around:${SEARCH_RADIUS_M},${lat},${lng});
+    );
+    out center;
+  `;
+  const res = await fetch(OVERPASS_URL, {
+    method: 'POST',
+    body: `data=${encodeURIComponent(query)}`,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  });
+  const json = await res.json();
+  return json.elements.map((el) => ({
+    id: el.id,
+    lat: el.lat ?? el.center?.lat,
+    lng: el.lon ?? el.center?.lon,
+    name: el.tags?.name || (el.tags?.amenity === 'police' ? 'Police Station' : 'Hospital'),
+    type: el.tags?.amenity, // 'police' | 'hospital'
+  })).filter((el) => el.lat && el.lng);
+}
+
+function createEmergencyIcon(type) {
+  const isPolice = type === 'police';
+  const color  = isPolice ? '#3b82f6' : '#22c55e';
+  const glow   = isPolice ? 'rgba(59,130,246,0.55)' : 'rgba(34,197,94,0.55)';
+  const emoji  = isPolice ? '🚔' : '🏥';
+  return L.divIcon({
+    className: '',
+    html: `<div class="em-marker em-marker-${type}" style="border-color:${color};box-shadow:0 0 10px ${glow},0 2px 8px rgba(0,0,0,0.5)">${emoji}</div>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+    popupAnchor: [0, -22],
+  });
+}
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -52,14 +106,18 @@ const TRAFFIC_LEVEL_LABEL = { Heavy: '🔴 Heavy', Moderate: '🟠 Moderate', Li
 export default function MapPage() {
   const [reports, setReports] = useState([]);
   const [zones, setZones] = useState([]);
+  const [emergencySvcs, setEmergencySvcs] = useState([]);
   const [userPos, setUserPos] = useState(null);
   const [alert, setAlert] = useState(null);
   const [sosAlert, setSosAlert] = useState(null);
   const [showTraffic, setShowTraffic] = useState(true);
+  const [showPolice, setShowPolice] = useState(true);
+  const [showHospital, setShowHospital] = useState(true);
   const [pinLocation, setPinLocation] = useState(null);
   const { driver } = useDriver();
   const navigate = useNavigate();
   const refreshTimer = useRef(null);
+  const lastEmergencyPos = useRef(null); // track last fetched position to avoid duplicate calls
 
   const fetchReports = useCallback(async (lat, lng) => {
     try {
@@ -73,6 +131,20 @@ export default function MapPage() {
       const { data } = await getTrafficZones(lat, lng);
       setZones(data);
     } catch {}
+  }, []);
+
+  // Fetch emergency services only when user moves >500m from last fetch point
+  const fetchEmergency = useCallback(async (lat, lng) => {
+    const prev = lastEmergencyPos.current;
+    if (prev && distanceKm(prev[0], prev[1], lat, lng) < 0.5) return;
+    lastEmergencyPos.current = [lat, lng];
+    try {
+      const results = await fetchEmergencyServices(lat, lng);
+      setEmergencySvcs(results);
+      console.log(`[Emergency Services] Loaded ${results.length} locations near ${lat.toFixed(4)},${lng.toFixed(4)}`);
+    } catch (err) {
+      console.warn('[Emergency Services] Overpass fetch failed:', err.message);
+    }
   }, []);
 
   const refreshAll = useCallback((lat, lng) => {
@@ -89,6 +161,7 @@ export default function MapPage() {
         const { latitude: lat, longitude: lng } = pos.coords;
         setUserPos([lat, lng]);
         refreshAll(lat, lng);
+        fetchEmergency(lat, lng);
         // Update driver location in DB so SOS nearby detection works
         updateLocation(driver._id, lat, lng).catch(() => {});
         // Auto-refresh zones every 60s
@@ -104,6 +177,7 @@ export default function MapPage() {
         const { latitude: lat, longitude: lng } = pos.coords;
         setUserPos([lat, lng]);
         updateLocation(driver._id, lat, lng).catch(() => {});
+        fetchEmergency(lat, lng);
       },
       () => {},
       { timeout: 15000, maximumAge: 30000, enableHighAccuracy: false }
@@ -137,11 +211,13 @@ export default function MapPage() {
       socket.off('emergency_alert', handleEmergency);
       socket.off('sos_nearby', handleSosNearby);
     };
-  }, [driver?._id, fetchZones, refreshAll]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [driver?._id, fetchZones, refreshAll, fetchEmergency]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const heavyCount = zones.filter((z) => z.level === 'Heavy').length;
+  const heavyCount    = zones.filter((z) => z.level === 'Heavy').length;
   const moderateCount = zones.filter((z) => z.level === 'Moderate').length;
-  const lightCount = zones.filter((z) => z.level === 'Light').length;
+  const lightCount    = zones.filter((z) => z.level === 'Light').length;
+  const policeList    = emergencySvcs.filter((e) => e.type === 'police');
+  const hospitalList  = emergencySvcs.filter((e) => e.type === 'hospital');
 
   return (
     <div className="map-wrapper">
@@ -165,7 +241,8 @@ export default function MapPage() {
 
       {/* Top controls */}
       <div className="map-controls">
-        <span className="map-count">{reports.length} alerts nearby</span>
+        <span className="map-count">{reports.length} ⚠️ alerts</span>
+        <div className="map-controls-divider" />
         <button
           className={`map-btn traffic-toggle ${showTraffic ? 'active' : ''}`}
           onClick={() => setShowTraffic((v) => !v)}
@@ -173,17 +250,45 @@ export default function MapPage() {
         >
           🚦 Traffic
         </button>
-        <button className="map-btn" onClick={() => userPos && refreshAll(userPos[0], userPos[1])}>🔄 Refresh</button>
-        <button className="map-btn report-btn" onClick={() => navigate('/report')}>+ Report Issue</button>
+        <button
+          className={`map-btn police-toggle ${showPolice ? 'active' : ''}`}
+          onClick={() => setShowPolice((v) => !v)}
+          title={`Police stations (${policeList.length})`}
+        >
+          🚔 Police {policeList.length > 0 && <span className="map-btn-count">{policeList.length}</span>}
+        </button>
+        <button
+          className={`map-btn hospital-toggle ${showHospital ? 'active' : ''}`}
+          onClick={() => setShowHospital((v) => !v)}
+          title={`Hospitals (${hospitalList.length})`}
+        >
+          🏥 Hospital {hospitalList.length > 0 && <span className="map-btn-count">{hospitalList.length}</span>}
+        </button>
+        <div className="map-controls-divider" />
+        <button className="map-btn" onClick={() => userPos && refreshAll(userPos[0], userPos[1])} title="Refresh alerts">🔄</button>
+        <button className="map-btn report-btn" onClick={() => navigate('/report')}>+ Report</button>
       </div>
 
-      {/* Traffic legend */}
-      {showTraffic && (
+      {/* Traffic legend + emergency services legend */}
+      {(showTraffic || showPolice || showHospital) && (
         <div className="traffic-legend">
-          <span className="legend-title">Traffic Zones</span>
-          <span className="legend-item red">🔴 Heavy ({heavyCount})</span>
-          <span className="legend-item orange">🟠 Moderate ({moderateCount})</span>
-          <span className="legend-item green">🟢 Light ({lightCount})</span>
+          {showTraffic && (
+            <>
+              <span className="legend-title">Traffic</span>
+              <span className="legend-item red">🔴 Heavy ({heavyCount})</span>
+              <span className="legend-item orange">🟠 Moderate ({moderateCount})</span>
+              <span className="legend-item green">🟢 Light ({lightCount})</span>
+            </>
+          )}
+          {(showPolice || showHospital) && showTraffic && (
+            <span className="legend-sep" />
+          )}
+          {showPolice && policeList.length > 0 && (
+            <span className="legend-item" style={{ color: '#60a5fa' }}>🚔 Police ({policeList.length})</span>
+          )}
+          {showHospital && hospitalList.length > 0 && (
+            <span className="legend-item" style={{ color: '#4ade80' }}>🏥 Hospital ({hospitalList.length})</span>
+          )}
         </div>
       )}
 
@@ -257,7 +362,7 @@ export default function MapPage() {
                       address: r.address,
                     })}
                   >
-                    📍 View Exact Location
+                    📍 View Location
                   </button>
                   <a
                     href={`https://www.google.com/maps/dir/?api=1&destination=${r.location.coordinates[1]},${r.location.coordinates[0]}`}
@@ -266,6 +371,62 @@ export default function MapPage() {
                     🧭 Navigate
                   </a>
                 </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Police station markers */}
+        {showPolice && policeList.map((p) => (
+          <Marker
+            key={`police-${p.id}`}
+            position={[p.lat, p.lng]}
+            icon={createEmergencyIcon('police')}
+          >
+            <Popup>
+              <div className="popup em-popup">
+                <strong className="em-popup-title police">🚔 Police Station</strong>
+                <p className="em-popup-name">{p.name}</p>
+                {userPos && (
+                  <p className="em-popup-dist">
+                    📍 {distanceKm(userPos[0], userPos[1], p.lat, p.lng).toFixed(2)} km away
+                  </p>
+                )}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`}
+                  target="_blank" rel="noreferrer" className="popup-gmaps-btn"
+                  style={{ display: 'inline-block', marginTop: 8 }}
+                >
+                  🧭 Navigate
+                </a>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* Hospital markers */}
+        {showHospital && hospitalList.map((h) => (
+          <Marker
+            key={`hospital-${h.id}`}
+            position={[h.lat, h.lng]}
+            icon={createEmergencyIcon('hospital')}
+          >
+            <Popup>
+              <div className="popup em-popup">
+                <strong className="em-popup-title hospital">🏥 Hospital</strong>
+                <p className="em-popup-name">{h.name}</p>
+                {userPos && (
+                  <p className="em-popup-dist">
+                    📍 {distanceKm(userPos[0], userPos[1], h.lat, h.lng).toFixed(2)} km away
+                  </p>
+                )}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${h.lat},${h.lng}`}
+                  target="_blank" rel="noreferrer" className="popup-gmaps-btn"
+                  style={{ display: 'inline-block', marginTop: 8 }}
+                >
+                  🧭 Navigate
+                </a>
               </div>
             </Popup>
           </Marker>

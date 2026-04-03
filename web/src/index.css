@@ -81,12 +81,15 @@ a { text-decoration: none; }
   flex: 1;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden;        /* map fills this exactly */
   margin-left: var(--sidebar-w);
+  min-width: 0;
 }
 
+/* Scrollable wrapper for non-map pages */
 .page-body {
   flex: 1;
+  height: 100%;
   overflow-y: auto;
   background: var(--bg);
 }

@@ -63,11 +63,46 @@
 }
 .map-btn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
 
-.traffic-toggle { }
 .traffic-toggle.active {
   background: rgba(59,130,246,0.15);
   border-color: rgba(59,130,246,0.4);
   color: #93c5fd;
+}
+
+.police-toggle.active {
+  background: rgba(59,130,246,0.18);
+  border-color: rgba(59,130,246,0.5);
+  color: #93c5fd;
+}
+
+.hospital-toggle.active {
+  background: rgba(34,197,94,0.15);
+  border-color: rgba(34,197,94,0.4);
+  color: #86efac;
+}
+
+/* Small count badge inside map button */
+.map-btn-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 5px;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 3px;
+}
+
+/* Vertical divider between control groups */
+.map-controls-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border2);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
 .report-btn {
@@ -101,6 +136,11 @@
 .legend-item.red { color: #f87171; }
 .legend-item.orange { color: #fb923c; }
 .legend-item.green { color: #4ade80; }
+.legend-sep {
+  width: 1px; height: 14px;
+  background: var(--border2);
+  flex-shrink: 0;
+}
 
 /* ── Popups ── */
 .popup { min-width: 180px; }
@@ -123,6 +163,40 @@
   transition: opacity 0.2s;
 }
 .popup-gmaps-btn:hover { opacity: 0.85; }
+
+/* ── Emergency service markers ── */
+.em-marker {
+  width: 38px; height: 38px;
+  background: rgba(9,14,28,0.92);
+  border: 2px solid;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  transition: transform 0.2s;
+  animation: emMarkerIn 0.3s ease;
+}
+.em-marker:hover { transform: scale(1.15); }
+@keyframes emMarkerIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+/* Emergency popup */
+.em-popup { min-width: 160px; }
+.em-popup-title {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.em-popup-title.police { color: #2563eb; }
+.em-popup-title.hospital { color: #16a34a; }
+.em-popup-name { font-size: 13px; color: #1e293b; font-weight: 600; margin-bottom: 4px; }
+.em-popup-dist { font-size: 11px; color: #64748b; margin-bottom: 2px; }
 
 /* ── Leaflet dark theme ── */
 .leaflet-control-zoom {
@@ -151,4 +225,14 @@
 @media (max-width: 768px) {
   .map-wrapper { height: calc(100vh - 60px); }
   .alert-banner { left: 0; }
+  .map-controls {
+    left: 8px;
+    right: 8px;
+    transform: none;
+    overflow-x: auto;
+    border-radius: 16px;
+    justify-content: flex-start;
+    padding: 6px 12px;
+  }
+  .map-controls-divider { display: none; }
 }
